@@ -79,4 +79,7 @@ public partial class ProjectViewModel : ObservableObject
 
     public void AddTodo(string text) => Project.Todos.Add(new TodoItem { Text = text });
     public void RemoveTodo(TodoItem item) => Project.Todos.Remove(item);
+
+    public void ReapplyStage(PixelRect rect) => _stage.Reapply(rect);
+    public void MinimizeStage() => _stage.MinimizeCurrent();
 }
