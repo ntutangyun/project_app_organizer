@@ -70,6 +70,9 @@ public partial class MainWindow : Window
 
     private void ReapplyStage() => _vm.SelectedProject?.ReapplyStage(GetStageRect());
 
+    /// <summary>Detach every docked window across all projects (used on accidental termination).</summary>
+    public void DetachAllWindows() => _vm.ReleaseAll();
+
     // On project switch: hide the outgoing project's staged window and surface the
     // incoming project's last active window (or leave the stage empty if it has none).
     private void OnVmPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)

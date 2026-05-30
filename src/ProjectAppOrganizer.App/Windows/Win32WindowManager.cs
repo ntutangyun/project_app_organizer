@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text;
 using ProjectAppOrganizer.Core.Windows;
 
@@ -51,12 +54,60 @@ public class Win32WindowManager : IWindowManager
     public void Close(nint handle) =>
         Win32Interop.PostMessage(handle, Win32Interop.WM_CLOSE, 0, 0);
 
-    public void SetOwner(nint handle, nint owner) =>
+    public void SetOwner(nint handle, nint owner)
+    {
         Win32Interop.SetWindowLongPtr(handle, Win32Interop.GWLP_HWNDPARENT, owner);
+        var changed = owner != 0 ? _owned.Add(handle) : _owned.Remove(handle);
+        if (changed) PersistRecovery();
+    }
 
     private static string SafeProcessName(uint pid)
     {
         try { return System.Diagnostics.Process.GetProcessById((int)pid).ProcessName; }
         catch { return string.Empty; }
+    }
+
+    // --- Crash recovery -------------------------------------------------------
+    // We track the windows we own and mirror that set to disk. If this session is
+    // killed before it can detach them, the next session re-attaches the orphans.
+
+    private readonly HashSet<nint> _owned = new();
+
+    private static string RecoveryPath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "ProjectAppOrganizer", "managed-windows.txt");
+
+    private void PersistRecovery()
+    {
+        try
+        {
+            var path = RecoveryPath;
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllLines(path, _owned.Select(h => h.ToString()));
+        }
+        catch { /* best effort */ }
+    }
+
+    /// <summary>Detach (un-own, un-hide) windows a previous crashed session left owned.</summary>
+    public void RecoverOrphans()
+    {
+        try
+        {
+            var path = RecoveryPath;
+            if (File.Exists(path))
+            {
+                foreach (var line in File.ReadAllLines(path))
+                {
+                    if (nint.TryParse(line, out var h) && Win32Interop.IsWindow(h))
+                    {
+                        Win32Interop.SetWindowLongPtr(h, Win32Interop.GWLP_HWNDPARENT, 0);
+                        Win32Interop.ShowWindow(h, Win32Interop.SW_SHOWNA);
+                    }
+                }
+                File.Delete(path);
+            }
+        }
+        catch { /* best effort */ }
+        _owned.Clear();
     }
 }

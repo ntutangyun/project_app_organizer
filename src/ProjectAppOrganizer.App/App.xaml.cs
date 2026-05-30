@@ -25,7 +25,16 @@ public partial class App : Application
         sc.AddSingleton<MainWindow>();
         Services = sc.BuildServiceProvider();
 
+        // Re-attach any windows a previous crashed/killed session left owned.
+        Services.GetRequiredService<Win32WindowManager>().RecoverOrphans();
+
         var window = Services.GetRequiredService<MainWindow>();
+
+        // On any accidental termination, detach docked windows so they're never orphaned.
+        DispatcherUnhandledException += (_, _) => window.DetachAllWindows();
+        AppDomain.CurrentDomain.UnhandledException += (_, _) => window.DetachAllWindows();
+        AppDomain.CurrentDomain.ProcessExit += (_, _) => window.DetachAllWindows();
+
         window.Show();
     }
 }
