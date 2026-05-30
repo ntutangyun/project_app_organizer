@@ -1,0 +1,15 @@
+<Window x:Class="ProjectAppOrganizer.App.Views.PickerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Attach a window" Height="420" Width="420"
+        WindowStartupLocation="CenterOwner" Background="#1B212B">
+    <DockPanel Margin="8">
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+            <Button Content="Attach" Click="Ok_Click" Padding="12,4" Margin="4,0"/>
+            <Button Content="Cancel" Click="Cancel_Click" Padding="12,4"/>
+        </StackPanel>
+        <ListBox x:Name="List" DisplayMemberPath="Title"
+                 Background="#222A36" Foreground="#C5D0E0" BorderThickness="0"
+                 MouseDoubleClick="Ok_Click"/>
+    </DockPanel>
+</Window>
