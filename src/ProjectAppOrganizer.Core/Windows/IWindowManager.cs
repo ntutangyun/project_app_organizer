@@ -8,4 +8,5 @@ public interface IWindowManager
     void Minimize(nint handle);
     void Restore(nint handle);
     void BringToFront(nint handle);
+    void Close(nint handle);
 }

@@ -18,4 +18,5 @@ public class FakeWindowManager : IWindowManager
     public void Minimize(nint handle) => Calls.Add($"Minimize:{handle}");
     public void Restore(nint handle) => Calls.Add($"Restore:{handle}");
     public void BringToFront(nint handle) => Calls.Add($"BringToFront:{handle}");
+    public void Close(nint handle) => Calls.Add($"Close:{handle}");
 }
