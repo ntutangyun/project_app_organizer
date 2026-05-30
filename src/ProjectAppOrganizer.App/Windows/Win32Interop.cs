@@ -41,6 +41,11 @@ internal static class Win32Interop
     [DllImport("user32.dll")]
     public static extern bool PostMessage(nint hWnd, uint msg, nint wParam, nint lParam);
 
+    [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW", SetLastError = true)]
+    public static extern nint SetWindowLongPtr(nint hWnd, int nIndex, nint dwNewLong);
+
+    public const int GWLP_HWNDPARENT = -8;
+
     public const int GWL_EXSTYLE = -20;
     public const long WS_EX_TOOLWINDOW = 0x00000080;
 

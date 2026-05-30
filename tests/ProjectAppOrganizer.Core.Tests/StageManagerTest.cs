@@ -90,6 +90,17 @@ public class StageManagerTest
     }
 
     [Fact]
+    public void Stage_WithOwnerProvider_OwnsWindowToOrganizer()
+    {
+        var wm = new FakeWindowManager();
+        var sm = new StageManager(wm, () => 999);
+
+        sm.Stage(7, Stage);
+
+        Assert.Contains("SetOwner:7:999", wm.Calls);
+    }
+
+    [Fact]
     public void HideCurrent_HidesCurrentWindow()
     {
         var wm = new FakeWindowManager();

@@ -20,4 +20,5 @@ public class FakeWindowManager : IWindowManager
     public void Restore(nint handle) => Calls.Add($"Restore:{handle}");
     public void BringToFront(nint handle) => Calls.Add($"BringToFront:{handle}");
     public void Close(nint handle) => Calls.Add($"Close:{handle}");
+    public void SetOwner(nint handle, nint owner) => Calls.Add($"SetOwner:{handle}:{owner}");
 }

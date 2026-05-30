@@ -10,4 +10,6 @@ public interface IWindowManager
     void Restore(nint handle);
     void BringToFront(nint handle);
     void Close(nint handle);
+    /// <summary>Set the window's owner (0 to clear). Owned windows stay above the owner.</summary>
+    void SetOwner(nint handle, nint owner);
 }

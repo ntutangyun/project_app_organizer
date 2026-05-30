@@ -9,8 +9,13 @@ namespace ProjectAppOrganizer.Core.Windows;
 public class StageManager
 {
     private readonly IWindowManager _wm;
+    private readonly Func<nint>? _owner;
 
-    public StageManager(IWindowManager wm) => _wm = wm;
+    public StageManager(IWindowManager wm, Func<nint>? owner = null)
+    {
+        _wm = wm;
+        _owner = owner;
+    }
 
     public nint? Current { get; private set; }
 
@@ -22,6 +27,13 @@ public class StageManager
 
         _wm.Show(handle);
         _wm.MoveResize(handle, stage);
+        // Own the window to the organizer so the OS keeps it above the organizer
+        // (the user can't lose it behind the window) and it follows minimize.
+        if (_owner is not null)
+        {
+            var owner = _owner();
+            if (owner != 0) _wm.SetOwner(handle, owner);
+        }
         _wm.BringToFront(handle);
         Current = handle;
     }

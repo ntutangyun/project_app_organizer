@@ -67,7 +67,8 @@ public partial class ProjectViewModel : ObservableObject
         }
         else
         {
-            // Detach only: hand the window back to the user, floating.
+            // Detach only: release ownership and hand the window back, floating.
+            _wm.SetOwner(tab.Handle, 0);
             _wm.Restore(tab.Handle);
         }
 
@@ -90,6 +91,9 @@ public partial class ProjectViewModel : ObservableObject
     public void ReleaseAll()
     {
         foreach (var tab in Tabs)
+        {
+            _wm.SetOwner(tab.Handle, 0);
             _wm.Show(tab.Handle);
+        }
     }
 }

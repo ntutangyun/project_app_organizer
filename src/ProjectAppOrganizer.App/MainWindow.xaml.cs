@@ -22,9 +22,12 @@ public partial class MainWindow : Window
 
         _vm = new MainViewModel(
             store,
-            project => new ProjectViewModel(project, wm, launcher, new StageManager(wm), GetStageRect));
+            project => new ProjectViewModel(project, wm, launcher,
+                new StageManager(wm, () => _wm.SelfHandle), GetStageRect));
         _vm.Load();
         DataContext = _vm;
+        ProjectList.AddHandler(System.Windows.Controls.Primitives.ButtonBase.ClickEvent,
+            new RoutedEventHandler(OnProjectDeleteClick));
 
         Loaded += OnLoaded;
         StateChanged += OnStateChanged;
@@ -90,17 +93,94 @@ public partial class MainWindow : Window
             System.Windows.Threading.DispatcherPriority.Background);
     }
 
-    private void AddProject_Click(object sender, RoutedEventArgs e) => _vm.AddProject("New Project");
-    private void AddTodo_Click(object sender, RoutedEventArgs e) => _vm.SelectedProject?.AddTodo("New todo");
+    private void AddProject_Click(object sender, RoutedEventArgs e)
+    {
+        _vm.AddProject("New Project");
+        _vm.Save();
+    }
+
+    private void AddTodo_Click(object sender, RoutedEventArgs e)
+    {
+        _vm.SelectedProject?.AddTodo("New task");
+        _vm.Save();
+    }
+
+    private void DeleteTodo_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.Tag is TodoItem item)
+        {
+            _vm.SelectedProject?.RemoveTodo(item);
+            _vm.Save();
+        }
+    }
+
+    // Project delete buttons live inside the ListBox item template, so their clicks
+    // bubble up here. RepeatButtons (scrollbar) are not Button, so they're ignored.
+    private void OnProjectDeleteClick(object sender, RoutedEventArgs e)
+    {
+        if (e.Source is Button btn && btn.DataContext is ProjectViewModel vm)
+        {
+            DeleteProject(vm);
+            e.Handled = true;
+        }
+    }
+
+    private void DeleteProject(ProjectViewModel vm)
+    {
+        var label = string.IsNullOrWhiteSpace(vm.Project.Name) ? "this project" : $"\"{vm.Project.Name}\"";
+        if (MessageBox.Show($"Delete {label}? Its tasks will be removed.", "Delete project",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            return;
+        vm.ReleaseAll();              // un-hide / un-own any staged windows so they aren't orphaned
+        _vm.RemoveProject(vm);
+        _vm.Save();
+    }
+
+    private void Browse_Click(object sender, RoutedEventArgs e)
+    {
+        if (_vm.SelectedProject is null) return;
+        var dlg = new Microsoft.Win32.OpenFolderDialog { Title = "Select working folder" };
+        if (!string.IsNullOrWhiteSpace(FolderBox.Text) && System.IO.Directory.Exists(FolderBox.Text))
+            dlg.InitialDirectory = FolderBox.Text;
+        if (dlg.ShowDialog() == true)
+        {
+            FolderBox.Text = dlg.FolderName;   // writes back to Project.FolderPath via binding
+            _vm.Save();
+        }
+    }
 
     private void OpenTerminal_Click(object sender, RoutedEventArgs e)
     {
+        if (_vm.SelectedProject is null) return;
+        if (sender is Button b && b.ContextMenu is { } menu)
+        {
+            menu.PlacementTarget = b;
+            menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+            menu.IsOpen = true;
+        }
+    }
+
+    private void LaunchShell_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem mi && mi.Tag is string tag &&
+            Enum.TryParse<ShellType>(tag, out var shell))
+            LaunchTerminal(shell);
+    }
+
+    private void LaunchTerminal(ShellType shell)
+    {
         var project = _vm.SelectedProject;
         if (project is null) return;
+        var name = shell switch
+        {
+            ShellType.GitBash => "bash",
+            ShellType.Cmd => "cmd",
+            _ => "pwsh"
+        };
         project.OpenTerminal(new TerminalProfile
         {
-            Name = "pwsh",
-            Shell = ShellType.PowerShell,
+            Name = name,
+            Shell = shell,
             WorkingDirectory = project.Project.FolderPath
         });
     }

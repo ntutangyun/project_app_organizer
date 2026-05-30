@@ -51,6 +51,9 @@ public class Win32WindowManager : IWindowManager
     public void Close(nint handle) =>
         Win32Interop.PostMessage(handle, Win32Interop.WM_CLOSE, 0, 0);
 
+    public void SetOwner(nint handle, nint owner) =>
+        Win32Interop.SetWindowLongPtr(handle, Win32Interop.GWLP_HWNDPARENT, owner);
+
     private static string SafeProcessName(uint pid)
     {
         try { return System.Diagnostics.Process.GetProcessById((int)pid).ProcessName; }

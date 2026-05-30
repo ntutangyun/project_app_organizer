@@ -233,17 +233,20 @@
         <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Margin" Value="8,2"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListBoxItem">
                     <Grid>
                         <Border x:Name="bd" Background="Transparent" CornerRadius="8" Padding="12,9">
-                            <StackPanel Orientation="Horizontal">
+                            <DockPanel>
+                                <Button x:Name="del" DockPanel.Dock="Right" Style="{DynamicResource TabCloseButton}"
+                                        Visibility="Hidden" ToolTip="Delete project"/>
                                 <Border x:Name="dot" Width="7" Height="7" CornerRadius="4"
                                         Background="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,11,0"/>
                                 <TextBlock Text="{Binding Project.Name}" FontFamily="{StaticResource MonoFont}"
                                            VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                            </StackPanel>
+                            </DockPanel>
                         </Border>
                         <Border x:Name="bar" Width="3" HorizontalAlignment="Left" CornerRadius="2"
                                 Background="{StaticResource AccentBrush}" Margin="0,6" Visibility="Collapsed"/>
@@ -251,11 +254,13 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="bd" Property="Background" Value="#141A26"/>
+                            <Setter TargetName="del" Property="Visibility" Value="Visible"/>
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="bd" Property="Background" Value="{StaticResource ElevatedBrush}"/>
                             <Setter TargetName="bar" Property="Visibility" Value="Visible"/>
                             <Setter TargetName="dot" Property="Background" Value="{StaticResource AccentBrush}"/>
+                            <Setter TargetName="del" Property="Visibility" Value="Visible"/>
                             <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -360,6 +365,44 @@
                             </Track.DecreaseRepeatButton>
                         </Track>
                     </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===================== Context menu (terminal picker) ===================== -->
+    <Style TargetType="ContextMenu">
+        <Setter Property="Background" Value="{StaticResource ElevatedBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource StrokeStrongBrush}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContextMenu">
+                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="1" CornerRadius="9" Padding="5" Effect="{StaticResource PanelShadow}">
+                        <StackPanel IsItemsHost="True"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="MenuItem">
+        <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+        <Setter Property="FontFamily" Value="{StaticResource SansFont}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="MenuItem">
+                    <Border x:Name="bd" Background="Transparent" CornerRadius="6" Padding="12,7">
+                        <ContentPresenter ContentSource="Header" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="bd" Property="Background" Value="{StaticResource AccentSoftBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

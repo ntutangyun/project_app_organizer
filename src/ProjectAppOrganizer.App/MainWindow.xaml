@@ -66,7 +66,21 @@
                     <TextBox Text="{Binding Project.Description, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource BodyBox}" Height="68" Margin="0,12,0,0"/>
 
-                    <Grid Margin="2,22,0,8">
+                    <TextBlock Text="WORKING FOLDER" Style="{StaticResource SectionLabel}" Margin="2,18,0,6"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="FolderBox" Grid.Column="0"
+                                 Text="{Binding Project.FolderPath, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource BodyBox}" AcceptsReturn="False" TextWrapping="NoWrap"
+                                 VerticalContentAlignment="Center" Height="34"/>
+                        <Button Grid.Column="1" Content="Browse" Click="Browse_Click"
+                                Style="{StaticResource GhostButton}" Margin="8,0,0,0" Height="34"/>
+                    </Grid>
+
+                    <Grid Margin="2,18,0,8">
                         <TextBlock Text="TODO" Style="{StaticResource SectionLabel}"/>
                         <Border HorizontalAlignment="Right" Background="{StaticResource AccentSoftBrush}"
                                 CornerRadius="9" Padding="8,1" VerticalAlignment="Center">
@@ -84,16 +98,22 @@
                     <ItemsControl ItemsSource="{Binding Project.Todos}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="Transparent" Padding="8,5" Margin="0,1">
+                                <Border x:Name="todoRow" Background="Transparent" Padding="8,5" Margin="0,1">
                                     <DockPanel>
                                         <CheckBox IsChecked="{Binding Done}" Style="{StaticResource TodoCheck}"
                                                   DockPanel.Dock="Left" Margin="0,0,11,0"/>
+                                        <Button x:Name="todoDel" DockPanel.Dock="Right" Click="DeleteTodo_Click"
+                                                Tag="{Binding}" Style="{StaticResource TabCloseButton}"
+                                                Visibility="Hidden" ToolTip="Delete task"/>
                                         <TextBox x:Name="todoText"
                                                  Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
                                                  Style="{StaticResource TodoTextBox}"/>
                                     </DockPanel>
                                 </Border>
                                 <DataTemplate.Triggers>
+                                    <Trigger SourceName="todoRow" Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="todoDel" Property="Visibility" Value="Visible"/>
+                                    </Trigger>
                                     <DataTrigger Binding="{Binding Done}" Value="True">
                                         <Setter TargetName="todoText" Property="Foreground"
                                                 Value="{StaticResource TextMutedBrush}"/>
@@ -116,7 +136,15 @@
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center"
                                 Margin="10,0,0,8">
                         <Button Content="+  Terminal" Click="OpenTerminal_Click"
-                                Style="{StaticResource AccentButton}" Height="32"/>
+                                Style="{StaticResource AccentButton}" Height="32">
+                            <Button.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="PowerShell" Tag="PowerShell" Click="LaunchShell_Click"/>
+                                    <MenuItem Header="Command Prompt" Tag="Cmd" Click="LaunchShell_Click"/>
+                                    <MenuItem Header="Git Bash" Tag="GitBash" Click="LaunchShell_Click"/>
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
                         <Button Content="Attach Window" Click="AttachWindow_Click"
                                 Style="{StaticResource GhostButton}" Margin="8,0,0,0" Height="32"/>
                     </StackPanel>
