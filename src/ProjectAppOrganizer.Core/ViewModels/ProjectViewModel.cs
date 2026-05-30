@@ -179,4 +179,5 @@ public partial class ProjectViewModel : ObservableObject
     public void ReapplyStage(PixelRect rect) => _stage.Reapply(rect);
     public void ReactivateStage(PixelRect rect) => _stage.Reactivate(rect);
     public void HideStage() => _stage.HideCurrent();
+    public void ClearStage() => _stage.Clear();
 }

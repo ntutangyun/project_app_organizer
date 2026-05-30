@@ -14,6 +14,7 @@ public partial class MainWindow : Window
 {
     private readonly MainViewModel _vm;
     private readonly Win32WindowManager _wm;
+    private ProjectViewModel? _shown;   // project whose window is currently on the stage
 
     public MainWindow(Win32WindowManager wm, ITerminalLauncher launcher, IProjectStore store)
     {
@@ -26,6 +27,8 @@ public partial class MainWindow : Window
                 new StageManager(wm, () => _wm.SelfHandle), GetStageRect));
         _vm.Load();
         DataContext = _vm;
+        _shown = _vm.SelectedProject;
+        _vm.PropertyChanged += OnVmPropertyChanged;
 
         Loaded += OnLoaded;
         StateChanged += OnStateChanged;
@@ -66,6 +69,20 @@ public partial class MainWindow : Window
     }
 
     private void ReapplyStage() => _vm.SelectedProject?.ReapplyStage(GetStageRect());
+
+    // On project switch: hide the outgoing project's staged window and surface the
+    // incoming project's last active window (or leave the stage empty if it has none).
+    private void OnVmPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(MainViewModel.SelectedProject)) return;
+
+        _shown?.HideStage();
+        _shown = _vm.SelectedProject;
+        var next = _shown;
+        // Defer so the (possibly just-shown) stage element has laid out before we measure it.
+        Dispatcher.BeginInvoke(new Action(() => next?.ReactivateStage(GetStageRect())),
+            System.Windows.Threading.DispatcherPriority.Background);
+    }
 
     private void OnStateChanged(object? sender, EventArgs e)
     {
@@ -134,6 +151,7 @@ public partial class MainWindow : Window
             "Delete", "Cancel");
         if (choice != 0) return;
         vm.ReleaseAll();   // detach docked windows so they remain open and independent
+        vm.ClearStage();   // so the switch handler won't re-hide the just-detached window
         _vm.RemoveProject(vm);
         _vm.Save();
     }
@@ -242,8 +260,12 @@ public partial class MainWindow : Window
         var list = project.ActiveTodos.Contains(current) ? project.ActiveTodos : project.CompletedTodos;
         var idx = list.IndexOf(current);
 
+        // With Alt held, the real key arrives via SystemKey (e.Key is Key.System).
+        var key = e.Key == System.Windows.Input.Key.System ? e.SystemKey : e.Key;
+        var alt = (System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Alt) != 0;
+
         // Backspace on an empty task deletes it and moves to the previous task.
-        if (e.Key == System.Windows.Input.Key.Back && tb.Text.Length == 0)
+        if (key == System.Windows.Input.Key.Back && tb.Text.Length == 0)
         {
             e.Handled = true;
             var prev = idx > 0 ? list[idx - 1] : null;
@@ -253,9 +275,9 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (e.Key != System.Windows.Input.Key.Enter) return;
+        if (key != System.Windows.Input.Key.Enter) return;
 
-        if ((System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Alt) != 0)
+        if (alt)
         {
             // Alt+Enter inserts a line break.
             var caret = tb.CaretIndex;
