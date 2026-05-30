@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ProjectAppOrganizer.App/ProjectAppOrganizer.App.csproj" />
+    <Project Path="src/ProjectAppOrganizer.Core/ProjectAppOrganizer.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ProjectAppOrganizer.Core.Tests/ProjectAppOrganizer.Core.Tests.csproj" />
+  </Folder>
+</Solution>
