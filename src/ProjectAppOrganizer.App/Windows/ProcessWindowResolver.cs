@@ -4,30 +4,56 @@ using System.Runtime.InteropServices;
 namespace ProjectAppOrganizer.App.Windows;
 
 /// <summary>
-/// Resolves the top-level window belonging to a launched process or any of its
-/// descendants. A shell's visible window is often owned by a child process
-/// (conhost hosting cmd/powershell, git-bash spawning mintty) rather than the
-/// process we started, so <see cref="System.Diagnostics.Process.MainWindowHandle"/>
-/// is unreliable.
+/// Resolves the top-level window of a launched shell. The visible window is usually
+/// owned by a child process (conhost hosting cmd/powershell, git-bash spawning
+/// mintty) rather than the process we started, so we match by process tree — with a
+/// process-name fallback (e.g. "mintty") — and ignore windows that existed before launch.
 /// </summary>
 internal static class ProcessWindowResolver
 {
-    public static nint FindMainWindow(int rootPid)
+    public static HashSet<nint> SnapshotVisibleWindows()
+    {
+        var set = new HashSet<nint>();
+        Win32Interop.EnumWindows((h, _) =>
+        {
+            if (Win32Interop.IsWindowVisible(h)) set.Add(h);
+            return true;
+        }, 0);
+        return set;
+    }
+
+    /// <summary>
+    /// Find a newly-appeared, visible, titled window owned by <paramref name="rootPid"/>
+    /// or a descendant, or (fallback) by a process named <paramref name="hintProcessName"/>.
+    /// </summary>
+    public static nint FindNewWindow(int rootPid, HashSet<nint> preexisting, string? hintProcessName)
     {
         var pids = DescendantPids((uint)rootPid);
         nint found = 0;
 
         Win32Interop.EnumWindows((hWnd, _) =>
         {
+            if (preexisting.Contains(hWnd)) return true;
             if (!Win32Interop.IsWindowVisible(hWnd)) return true;
-            Win32Interop.GetWindowThreadProcessId(hWnd, out var pid);
-            if (!pids.Contains(pid)) return true;
             if (Win32Interop.GetWindowTextLength(hWnd) == 0) return true;
+
+            Win32Interop.GetWindowThreadProcessId(hWnd, out var pid);
+            var match = pids.Contains(pid);
+            if (!match && hintProcessName is not null)
+                match = string.Equals(SafeProcessName(pid), hintProcessName, StringComparison.OrdinalIgnoreCase);
+            if (!match) return true;
+
             found = hWnd;
             return false; // stop enumeration
         }, 0);
 
         return found;
+    }
+
+    private static string SafeProcessName(uint pid)
+    {
+        try { return System.Diagnostics.Process.GetProcessById((int)pid).ProcessName; }
+        catch { return string.Empty; }
     }
 
     private static HashSet<uint> DescendantPids(uint rootPid)

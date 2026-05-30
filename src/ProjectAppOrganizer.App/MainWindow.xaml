@@ -31,6 +31,24 @@
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
+
+        <!-- Visibility helpers driven by whether a project (the DataContext) is selected -->
+        <Style x:Key="HideWhenNoProject" TargetType="Panel">
+            <Setter Property="Visibility" Value="Visible"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding}" Value="{x:Null}">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="ShowWhenNoProject" TargetType="Panel">
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding}" Value="{x:Null}">
+                    <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
 
     <Grid x:Name="Root" Opacity="0">
@@ -110,171 +128,191 @@
         <GridSplitter Grid.Column="1"/>
 
         <!-- ===================== Detail panel ===================== -->
-        <Border Grid.Column="2" Background="{StaticResource PanelBrush}">
-            <DockPanel DataContext="{Binding SelectedProject}" Margin="0,8,0,0">
+        <Border Grid.Column="2" Background="{StaticResource PanelBrush}" DataContext="{Binding SelectedProject}">
+            <Grid>
+                <DockPanel Style="{StaticResource HideWhenNoProject}" Margin="0,8,0,0">
+                    <StackPanel DockPanel.Dock="Top" Margin="18,12,18,0">
+                        <TextBox Text="{Binding Project.Name, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource TitleBox}"/>
+                        <TextBox Text="{Binding Project.Description, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource BodyBox}" MinHeight="64" MaxHeight="200"
+                                 VerticalScrollBarVisibility="Auto" Margin="0,12,0,0"/>
 
-                <StackPanel DockPanel.Dock="Top" Margin="18,12,18,0">
-                    <TextBox Text="{Binding Project.Name, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource TitleBox}"/>
-                    <TextBox Text="{Binding Project.Description, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource BodyBox}" Height="64" Margin="0,12,0,0"/>
+                        <TextBlock Text="WORKING FOLDER" Style="{StaticResource SectionLabel}" Margin="2,18,0,6"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid Grid.Column="0">
+                                <TextBox x:Name="FolderBox"
+                                         Text="{Binding Project.FolderPath, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource PathBox}" Height="34"/>
+                                <TextBlock Text="Not set — click Browse" IsHitTestVisible="False"
+                                           Foreground="{StaticResource TextMutedBrush}" Margin="12,0,0,0"
+                                           VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text, ElementName=FolderBox}" Value="">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+                            <Button Grid.Column="1" Content="Browse" Click="Browse_Click"
+                                    Style="{StaticResource GhostButton}" Margin="8,0,0,0" Height="34"/>
+                        </Grid>
+                    </StackPanel>
 
-                    <TextBlock Text="WORKING FOLDER" Style="{StaticResource SectionLabel}" Margin="2,18,0,6"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid Grid.Column="0">
-                            <TextBox x:Name="FolderBox"
-                                     Text="{Binding Project.FolderPath, UpdateSourceTrigger=PropertyChanged}"
-                                     Style="{StaticResource BodyBox}" AcceptsReturn="False" TextWrapping="NoWrap"
-                                     FontFamily="{StaticResource MonoFont}" Foreground="{StaticResource TextPrimaryBrush}"
-                                     VerticalContentAlignment="Center" Height="36"/>
-                            <TextBlock Text="Not set — click Browse" IsHitTestVisible="False"
-                                       Foreground="{StaticResource TextMutedBrush}" Margin="12,0,0,0"
-                                       VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
+                    <Button DockPanel.Dock="Bottom" Content="+  Add task" Click="AddTodo_Click"
+                            Style="{StaticResource GhostButton}" HorizontalAlignment="Stretch"
+                            Margin="18,8,18,18"/>
+
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="10,18,6,0">
+                        <StackPanel>
+                            <Grid Margin="8,0,8,6">
+                                <TextBlock Text="TODO" Style="{StaticResource SectionLabel}"/>
+                                <Border HorizontalAlignment="Right" Background="{StaticResource AccentSoftBrush}"
+                                        CornerRadius="9" Padding="8,1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding ActiveTodos.Count}" FontFamily="{StaticResource MonoFont}"
+                                               FontSize="11" Foreground="{StaticResource AccentBrush}"/>
+                                </Border>
+                            </Grid>
+                            <ItemsControl x:Name="TodoList" ItemsSource="{Binding ActiveTodos}"
+                                          ItemTemplate="{StaticResource TodoTemplate}"/>
+
+                            <StackPanel Margin="0,16,0,0">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Visible"/>
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Text, ElementName=FolderBox}" Value="">
-                                                <Setter Property="Visibility" Value="Visible"/>
+                                            <DataTrigger Binding="{Binding CompletedTodos.Count}" Value="0">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </Grid>
-                        <Button Grid.Column="1" Content="Browse" Click="Browse_Click"
-                                Style="{StaticResource GhostButton}" Margin="8,0,0,0" Height="36"/>
-                    </Grid>
-                </StackPanel>
-
-                <Button DockPanel.Dock="Bottom" Content="+  Add task" Click="AddTodo_Click"
-                        Style="{StaticResource GhostButton}" HorizontalAlignment="Stretch"
-                        Margin="18,8,18,18"/>
-
-                <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="10,18,6,0">
-                    <StackPanel>
-                        <!-- Active -->
-                        <Grid Margin="8,0,8,6">
-                            <TextBlock Text="TODO" Style="{StaticResource SectionLabel}"/>
-                            <Border HorizontalAlignment="Right" Background="{StaticResource AccentSoftBrush}"
-                                    CornerRadius="9" Padding="8,1" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding ActiveTodos.Count}" FontFamily="{StaticResource MonoFont}"
-                                           FontSize="11" Foreground="{StaticResource AccentBrush}"/>
-                            </Border>
-                        </Grid>
-                        <ItemsControl x:Name="TodoList" ItemsSource="{Binding ActiveTodos}"
-                                      ItemTemplate="{StaticResource TodoTemplate}"/>
-
-                        <!-- Completed (collapses when empty) -->
-                        <StackPanel Margin="0,16,0,0">
-                            <StackPanel.Style>
-                                <Style TargetType="StackPanel">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding CompletedTodos.Count}" Value="0">
-                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </StackPanel.Style>
-                            <Grid Margin="8,0,8,6">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="COMPLETED" Style="{StaticResource SectionLabel}"/>
-                                    <TextBlock Text="{Binding CompletedTodos.Count}" FontFamily="{StaticResource MonoFont}"
-                                               FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="8,0,0,0"/>
-                                </StackPanel>
-                                <Button HorizontalAlignment="Right" Content="Clear completed"
-                                        Click="DeleteAllCompleted_Click" Style="{StaticResource GhostButton}"
-                                        Padding="8,3" VerticalAlignment="Center"/>
-                            </Grid>
-                            <ItemsControl x:Name="CompletedList" ItemsSource="{Binding CompletedTodos}"
-                                          ItemTemplate="{StaticResource TodoTemplate}"/>
+                                </StackPanel.Style>
+                                <Grid Margin="8,0,8,6">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="COMPLETED" Style="{StaticResource SectionLabel}"/>
+                                        <TextBlock Text="{Binding CompletedTodos.Count}" FontFamily="{StaticResource MonoFont}"
+                                                   FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="8,0,0,0"/>
+                                    </StackPanel>
+                                    <Button HorizontalAlignment="Right" Content="Clear completed"
+                                            Click="DeleteAllCompleted_Click" Style="{StaticResource GhostButton}"
+                                            Padding="8,3" VerticalAlignment="Center"/>
+                                </Grid>
+                                <ItemsControl x:Name="CompletedList" ItemsSource="{Binding CompletedTodos}"
+                                              ItemTemplate="{StaticResource TodoTemplate}"/>
+                            </StackPanel>
                         </StackPanel>
-                    </StackPanel>
-                </ScrollViewer>
-            </DockPanel>
+                    </ScrollViewer>
+                </DockPanel>
+
+                <StackPanel Style="{StaticResource ShowWhenNoProject}" HorizontalAlignment="Center"
+                            VerticalAlignment="Center" Opacity="0.6">
+                    <TextBlock Text="NO PROJECT" FontFamily="{StaticResource MonoFont}" FontSize="12"
+                               Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Select or create a project on the left"
+                               Foreground="{StaticResource TextMutedBrush}" Margin="0,6,0,0"/>
+                </StackPanel>
+            </Grid>
         </Border>
 
         <GridSplitter Grid.Column="3"/>
 
         <!-- ===================== Main : tabs + stage ===================== -->
-        <DockPanel Grid.Column="4" DataContext="{Binding SelectedProject}">
+        <Grid Grid.Column="4" DataContext="{Binding SelectedProject}">
+            <DockPanel Style="{StaticResource HideWhenNoProject}">
+                <Border DockPanel.Dock="Top" Background="{StaticResource PanelBrush}"
+                        BorderBrush="{StaticResource StrokeSubtleBrush}" BorderThickness="0,0,0,1">
+                    <DockPanel Margin="10,8,12,0">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center"
+                                    Margin="10,0,0,8">
+                            <Button Content="+  Terminal" Click="OpenTerminal_Click"
+                                    Style="{StaticResource AccentButton}" Height="32">
+                                <Button.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="PowerShell" Tag="PowerShell" Click="LaunchShell_Click"/>
+                                        <MenuItem Header="Command Prompt" Tag="Cmd" Click="LaunchShell_Click"/>
+                                        <MenuItem Header="Git Bash" Tag="GitBash" Click="LaunchShell_Click"/>
+                                    </ContextMenu>
+                                </Button.ContextMenu>
+                            </Button>
+                            <Button Content="Attach Window" Click="AttachWindow_Click"
+                                    Style="{StaticResource GhostButton}" Margin="8,0,0,0" Height="32"/>
+                        </StackPanel>
 
-            <Border DockPanel.Dock="Top" Background="{StaticResource PanelBrush}"
-                    BorderBrush="{StaticResource StrokeSubtleBrush}" BorderThickness="0,0,0,1">
-                <DockPanel Margin="10,8,12,0">
-                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center"
-                                Margin="10,0,0,8">
-                        <Button Content="+  Terminal" Click="OpenTerminal_Click"
-                                Style="{StaticResource AccentButton}" Height="32">
-                            <Button.ContextMenu>
-                                <ContextMenu>
-                                    <MenuItem Header="PowerShell" Tag="PowerShell" Click="LaunchShell_Click"/>
-                                    <MenuItem Header="Command Prompt" Tag="Cmd" Click="LaunchShell_Click"/>
-                                    <MenuItem Header="Git Bash" Tag="GitBash" Click="LaunchShell_Click"/>
-                                </ContextMenu>
-                            </Button.ContextMenu>
-                        </Button>
-                        <Button Content="Attach Window" Click="AttachWindow_Click"
-                                Style="{StaticResource GhostButton}" Margin="8,0,0,0" Height="32"/>
-                    </StackPanel>
+                        <ItemsControl ItemsSource="{Binding Tabs}" VerticalAlignment="Bottom">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource TabChip}">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Ellipse Width="7" Height="7" Margin="11,0,8,0" VerticalAlignment="Center">
+                                                <Ellipse.Style>
+                                                    <Style TargetType="Ellipse">
+                                                        <Setter Property="Fill" Value="{StaticResource CyanBrush}"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsTerminal}" Value="True">
+                                                                <Setter Property="Fill" Value="{StaticResource AccentBrush}"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Ellipse.Style>
+                                            </Ellipse>
+                                            <Button Content="{Binding Title}" Click="ActivateTab_Click"
+                                                    Tag="{Binding}" Style="{StaticResource TabLabelButton}"/>
+                                            <Button Click="CloseTab_Click" Tag="{Binding}"
+                                                    Style="{StaticResource TabCloseButton}"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </DockPanel>
+                </Border>
 
-                    <ItemsControl ItemsSource="{Binding Tabs}" VerticalAlignment="Bottom">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Style="{StaticResource TabChip}">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <Ellipse Width="7" Height="7" Margin="11,0,8,0" VerticalAlignment="Center">
-                                            <Ellipse.Style>
-                                                <Style TargetType="Ellipse">
-                                                    <Setter Property="Fill" Value="{StaticResource CyanBrush}"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsTerminal}" Value="True">
-                                                            <Setter Property="Fill" Value="{StaticResource AccentBrush}"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Ellipse.Style>
-                                        </Ellipse>
-                                        <Button Content="{Binding Title}" Click="ActivateTab_Click"
-                                                Tag="{Binding}" Style="{StaticResource TabLabelButton}"/>
-                                        <Button Click="CloseTab_Click" Tag="{Binding}"
-                                                Style="{StaticResource TabCloseButton}"/>
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </DockPanel>
-            </Border>
+                <Border x:Name="Stage" Margin="14" CornerRadius="10"
+                        BorderBrush="{StaticResource StrokeSubtleBrush}" BorderThickness="1"
+                        Background="#0A0D14">
+                    <Grid>
+                        <Rectangle RadiusX="10" RadiusY="10" Fill="{StaticResource DotGridBrush}"/>
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.7">
+                            <Border Width="62" Height="46" CornerRadius="6" HorizontalAlignment="Center"
+                                    BorderBrush="{StaticResource StrokeStrongBrush}" BorderThickness="1.5">
+                                <Border Height="11" VerticalAlignment="Top" Background="{StaticResource StrokeStrongBrush}"
+                                        CornerRadius="5,5,0,0"/>
+                            </Border>
+                            <TextBlock Text="NO WINDOW STAGED" FontFamily="{StaticResource MonoFont}"
+                                       FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"
+                                       HorizontalAlignment="Center" Margin="0,18,0,0"/>
+                            <TextBlock Text="Open a terminal or attach a window to begin"
+                                       Foreground="{StaticResource TextMutedBrush}" FontSize="12"
+                                       HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </DockPanel>
 
-            <Border x:Name="Stage" Margin="14" CornerRadius="10"
-                    BorderBrush="{StaticResource StrokeSubtleBrush}" BorderThickness="1"
-                    Background="#0A0D14">
-                <Grid>
-                    <Rectangle RadiusX="10" RadiusY="10" Fill="{StaticResource DotGridBrush}"/>
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.7">
-                        <Border Width="62" Height="46" CornerRadius="6" HorizontalAlignment="Center"
-                                BorderBrush="{StaticResource StrokeStrongBrush}" BorderThickness="1.5">
-                            <Border Height="11" VerticalAlignment="Top" Background="{StaticResource StrokeStrongBrush}"
-                                    CornerRadius="5,5,0,0"/>
-                        </Border>
-                        <TextBlock Text="NO WINDOW STAGED" FontFamily="{StaticResource MonoFont}"
-                                   FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"
-                                   HorizontalAlignment="Center" Margin="0,18,0,0"/>
-                        <TextBlock Text="Open a terminal or attach a window to begin"
-                                   Foreground="{StaticResource TextMutedBrush}" FontSize="12"
-                                   HorizontalAlignment="Center" Margin="0,6,0,0"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-        </DockPanel>
+            <StackPanel Style="{StaticResource ShowWhenNoProject}" HorizontalAlignment="Center"
+                        VerticalAlignment="Center" Opacity="0.5">
+                <Border Width="64" Height="48" CornerRadius="6" HorizontalAlignment="Center"
+                        BorderBrush="{StaticResource StrokeStrongBrush}" BorderThickness="1.5">
+                    <Border Height="11" VerticalAlignment="Top" Background="{StaticResource StrokeStrongBrush}"
+                            CornerRadius="5,5,0,0"/>
+                </Border>
+                <TextBlock Text="NO PROJECT SELECTED" FontFamily="{StaticResource MonoFont}" FontSize="12"
+                           Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,18,0,0"/>
+                <TextBlock Text="Create or choose a project to dock windows into"
+                           Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>

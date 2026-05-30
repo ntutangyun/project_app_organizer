@@ -37,15 +37,21 @@ public class ProcessTerminalLauncher : ITerminalLauncher
             UseShellExecute = true
         };
 
+        // Snapshot existing windows so we only match the one this launch creates.
+        var preexisting = ProcessWindowResolver.SnapshotVisibleWindows();
+
         var process = Process.Start(psi);
         if (process is null) return 0;
 
         // The visible window is owned by the shell process or a descendant
-        // (conhost -> shell, git-bash -> mintty), so poll the process tree (up to ~5s)
-        // for a top-level window rather than the unreliable MainWindowHandle.
-        for (var i = 0; i < 50; i++)
+        // (conhost -> shell, git-bash -> mintty). Poll the process tree for a newly
+        // appeared top-level window; git bash gets a "mintty" name fallback and a
+        // longer window because its launcher exits early and the window appears late.
+        var hint = profile.Shell == ShellType.GitBash ? "mintty" : null;
+        var attempts = profile.Shell == ShellType.GitBash ? 100 : 50;
+        for (var i = 0; i < attempts; i++)
         {
-            var handle = ProcessWindowResolver.FindMainWindow(process.Id);
+            var handle = ProcessWindowResolver.FindNewWindow(process.Id, preexisting, hint);
             if (handle != 0) return handle;
             Thread.Sleep(100);
         }

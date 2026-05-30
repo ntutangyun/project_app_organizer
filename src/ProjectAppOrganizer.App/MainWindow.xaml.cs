@@ -235,8 +235,25 @@ public partial class MainWindow : Window
 
     private void Todo_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
-        if (e.Key != System.Windows.Input.Key.Enter) return;
         var tb = (TextBox)sender;
+        var project = _vm.SelectedProject;
+        if (project is null || tb.DataContext is not TodoItem current) return;
+
+        var list = project.ActiveTodos.Contains(current) ? project.ActiveTodos : project.CompletedTodos;
+        var idx = list.IndexOf(current);
+
+        // Backspace on an empty task deletes it and moves to the previous task.
+        if (e.Key == System.Windows.Input.Key.Back && tb.Text.Length == 0)
+        {
+            e.Handled = true;
+            var prev = idx > 0 ? list[idx - 1] : null;
+            project.RemoveTodo(current);
+            _vm.Save();
+            if (prev is not null) FocusTodo(prev);
+            return;
+        }
+
+        if (e.Key != System.Windows.Input.Key.Enter) return;
 
         if ((System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Alt) != 0)
         {
@@ -248,13 +265,8 @@ public partial class MainWindow : Window
             return;
         }
 
-        // Plain Enter: move to the next task (creating one if at the end).
+        // Plain Enter: move to the next task (creating one at the end).
         e.Handled = true;
-        var project = _vm.SelectedProject;
-        if (project is null || tb.DataContext is not TodoItem current) return;
-
-        var list = project.ActiveTodos.Contains(current) ? project.ActiveTodos : project.CompletedTodos;
-        var idx = list.IndexOf(current);
         if (idx >= 0 && idx + 1 < list.Count)
         {
             FocusTodo(list[idx + 1]);
