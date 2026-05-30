@@ -12,6 +12,8 @@ public partial class PickerWindow : Window
     {
         InitializeComponent();
         List.ItemsSource = windows;
+        Loaded += (_, _) => ProjectAppOrganizer.App.Windows.Win32Interop.UseDarkTitleBar(
+            new System.Windows.Interop.WindowInteropHelper(this).Handle);
     }
 
     private void Ok_Click(object sender, RoutedEventArgs e)

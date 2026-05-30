@@ -51,6 +51,8 @@ public partial class ProjectViewModel : ObservableObject
 
     public void Activate(WindowTab tab)
     {
+        foreach (var t in Tabs)
+            t.IsActive = ReferenceEquals(t, tab);
         ActiveTab = tab;
         _stage.Stage(tab.Handle, _stageRect());
     }

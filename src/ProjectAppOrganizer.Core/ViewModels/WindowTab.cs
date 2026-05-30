@@ -5,6 +5,7 @@ namespace ProjectAppOrganizer.Core.ViewModels;
 public partial class WindowTab : ObservableObject
 {
     [ObservableProperty] private string _title;
+    [ObservableProperty] private bool _isActive;
 
     public WindowTab(nint handle, string title, TabKind kind)
     {

@@ -38,6 +38,7 @@ public partial class MainWindow : Window
     {
         var handle = new System.Windows.Interop.WindowInteropHelper(this).Handle;
         _wm.SelfHandle = handle;
+        Win32Interop.UseDarkTitleBar(handle);
         // Re-align the staged window only when the user finishes moving/resizing the
         // organizer. Repositioning a foreign window during the live drag's modal loop
         // breaks the drag.

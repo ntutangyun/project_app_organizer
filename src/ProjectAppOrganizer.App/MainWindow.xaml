@@ -1,74 +1,179 @@
 <Window x:Class="ProjectAppOrganizer.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Project App Organizer" Height="800" Width="1280"
-        WindowState="Maximized" Background="#161A21"
-        FontSize="13" TextOptions.TextFormattingMode="Ideal">
-    <Grid>
+        Title="Project App Organizer" Height="820" Width="1320"
+        WindowState="Maximized"
+        FontFamily="{StaticResource SansFont}" FontSize="13"
+        TextOptions.TextFormattingMode="Ideal"
+        Background="{StaticResource BaseBrush}">
+
+    <Grid x:Name="Root" Opacity="0">
+        <Grid.Triggers>
+            <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                         From="0" To="1" Duration="0:0:0.28"/>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Grid.Triggers>
+
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="180"/>
-            <ColumnDefinition Width="240"/>
+            <ColumnDefinition Width="204"/>
+            <ColumnDefinition Width="270"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <DockPanel Grid.Column="0" Background="#1B212B">
-            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="6">
-                <Button Content="+ Project" Click="AddProject_Click" Padding="6,2"/>
-            </StackPanel>
-            <ListBox x:Name="ProjectList" Background="Transparent" BorderThickness="0"
-                     Foreground="#C5D0E0"
-                     ItemsSource="{Binding Projects}"
-                     SelectedItem="{Binding SelectedProject, Mode=TwoWay}"
-                     DisplayMemberPath="Project.Name"/>
-        </DockPanel>
+        <!-- ===================== Project rail ===================== -->
+        <Border Grid.Column="0" Background="{StaticResource RailBrush}"
+                BorderBrush="{StaticResource StrokeSubtleBrush}" BorderThickness="0,0,1,0">
+            <DockPanel>
+                <!-- Wordmark -->
+                <StackPanel DockPanel.Dock="Top" Margin="18,20,18,14">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="M 7,0 L 14,7 L 7,14 L 0,7 Z" Fill="{StaticResource AccentBrush}"
+                              Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center"
+                              Effect="{StaticResource AccentGlow}"/>
+                        <TextBlock Text="ORGANIZER" FontFamily="{StaticResource MonoFont}" FontWeight="Bold"
+                                   FontSize="14" Foreground="{StaticResource TextPrimaryBrush}"
+                                   VerticalAlignment="Center" Margin="10,0,0,0"/>
+                    </StackPanel>
+                    <Border Height="1" Background="{StaticResource StrokeSubtleBrush}" Margin="0,14,0,0"/>
+                </StackPanel>
 
-        <StackPanel Grid.Column="1" Background="#222A36" Margin="0"
-                    DataContext="{Binding SelectedProject}">
-            <TextBox Text="{Binding Project.Name, UpdateSourceTrigger=PropertyChanged}"
-                     FontWeight="SemiBold" Margin="8" Background="Transparent" Foreground="White" BorderThickness="0"/>
-            <TextBox Text="{Binding Project.Description, UpdateSourceTrigger=PropertyChanged}"
-                     AcceptsReturn="True" Height="60" Margin="8,0" TextWrapping="Wrap"
-                     Background="#2A3140" Foreground="#A9B4C6" BorderThickness="0"/>
-            <TextBlock Text="TODO" Foreground="#6B7688" Margin="8,10,8,2"/>
-            <ItemsControl ItemsSource="{Binding Project.Todos}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <DockPanel Margin="8,2">
-                            <CheckBox IsChecked="{Binding Done}" DockPanel.Dock="Left"/>
-                            <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
-                                     Background="Transparent" Foreground="#A9B4C6" BorderThickness="0"/>
-                        </DockPanel>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-            <Button Content="+ Todo" Click="AddTodo_Click" Margin="8" HorizontalAlignment="Left" Padding="6,2"/>
-        </StackPanel>
+                <TextBlock DockPanel.Dock="Top" Text="PROJECTS" Style="{StaticResource SectionLabel}"
+                           Margin="20,4,0,8"/>
 
+                <!-- New project -->
+                <Button DockPanel.Dock="Bottom" Content="+  New Project" Click="AddProject_Click"
+                        Style="{StaticResource AccentButton}" Margin="14,10,14,16" Height="36"/>
+
+                <ListBox x:Name="ProjectList" Style="{StaticResource ProjectListBox}"
+                         ItemsSource="{Binding Projects}"
+                         SelectedItem="{Binding SelectedProject, Mode=TwoWay}"/>
+            </DockPanel>
+        </Border>
+
+        <!-- ===================== Detail panel ===================== -->
+        <Border Grid.Column="1" Background="{StaticResource PanelBrush}"
+                BorderBrush="{StaticResource StrokeSubtleBrush}" BorderThickness="0,0,1,0">
+            <DockPanel DataContext="{Binding SelectedProject}" Margin="0,8,0,0">
+
+                <StackPanel DockPanel.Dock="Top" Margin="18,12,18,0">
+                    <TextBox Text="{Binding Project.Name, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource TitleBox}"/>
+                    <TextBox Text="{Binding Project.Description, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource BodyBox}" Height="68" Margin="0,12,0,0"/>
+
+                    <Grid Margin="2,22,0,8">
+                        <TextBlock Text="TODO" Style="{StaticResource SectionLabel}"/>
+                        <Border HorizontalAlignment="Right" Background="{StaticResource AccentSoftBrush}"
+                                CornerRadius="9" Padding="8,1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Project.Todos.Count}" FontFamily="{StaticResource MonoFont}"
+                                       FontSize="11" Foreground="{StaticResource AccentBrush}"/>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+
+                <Button DockPanel.Dock="Bottom" Content="+  Add task" Click="AddTodo_Click"
+                        Style="{StaticResource GhostButton}" HorizontalAlignment="Stretch"
+                        Margin="18,8,18,18"/>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="10,4,6,0">
+                    <ItemsControl ItemsSource="{Binding Project.Todos}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="Transparent" Padding="8,5" Margin="0,1">
+                                    <DockPanel>
+                                        <CheckBox IsChecked="{Binding Done}" Style="{StaticResource TodoCheck}"
+                                                  DockPanel.Dock="Left" Margin="0,0,11,0"/>
+                                        <TextBox x:Name="todoText"
+                                                 Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource TodoTextBox}"/>
+                                    </DockPanel>
+                                </Border>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding Done}" Value="True">
+                                        <Setter TargetName="todoText" Property="Foreground"
+                                                Value="{StaticResource TextMutedBrush}"/>
+                                        <Setter TargetName="todoText" Property="TextDecorations" Value="Strikethrough"/>
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <!-- ===================== Main : tabs + stage ===================== -->
         <DockPanel Grid.Column="2" DataContext="{Binding SelectedProject}">
-            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Background="#1B212B">
-                <ItemsControl ItemsSource="{Binding Tabs}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Background="#2A3140" Margin="2" CornerRadius="3,3,0,0">
-                                <StackPanel Orientation="Horizontal">
-                                    <Button Content="{Binding Title}" Click="ActivateTab_Click"
-                                            Tag="{Binding}" Background="Transparent" Foreground="#AEB9CB"
-                                            BorderThickness="0" Padding="8,4"/>
-                                    <Button Content="X" Click="CloseTab_Click" Tag="{Binding}"
-                                            Background="Transparent" Foreground="#7F8A9C" BorderThickness="0" Padding="4"/>
-                                </StackPanel>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-                <Button Content="+ Terminal" Click="OpenTerminal_Click" Margin="4" Padding="6,2"/>
-                <Button Content="Attach Window" Click="AttachWindow_Click" Margin="4" Padding="6,2"/>
-            </StackPanel>
 
-            <Border x:Name="Stage" Background="#1A1F28"/>
+            <Border DockPanel.Dock="Top" Background="{StaticResource PanelBrush}"
+                    BorderBrush="{StaticResource StrokeSubtleBrush}" BorderThickness="0,0,0,1">
+                <DockPanel Margin="10,8,12,0">
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center"
+                                Margin="10,0,0,8">
+                        <Button Content="+  Terminal" Click="OpenTerminal_Click"
+                                Style="{StaticResource AccentButton}" Height="32"/>
+                        <Button Content="Attach Window" Click="AttachWindow_Click"
+                                Style="{StaticResource GhostButton}" Margin="8,0,0,0" Height="32"/>
+                    </StackPanel>
+
+                    <ItemsControl ItemsSource="{Binding Tabs}" VerticalAlignment="Bottom">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource TabChip}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Ellipse Width="7" Height="7" Margin="11,0,8,0" VerticalAlignment="Center">
+                                            <Ellipse.Style>
+                                                <Style TargetType="Ellipse">
+                                                    <Setter Property="Fill" Value="{StaticResource CyanBrush}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsTerminal}" Value="True">
+                                                            <Setter Property="Fill" Value="{StaticResource AccentBrush}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Ellipse.Style>
+                                        </Ellipse>
+                                        <Button Content="{Binding Title}" Click="ActivateTab_Click"
+                                                Tag="{Binding}" Style="{StaticResource TabLabelButton}"/>
+                                        <Button Click="CloseTab_Click" Tag="{Binding}"
+                                                Style="{StaticResource TabCloseButton}"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </DockPanel>
+            </Border>
+
+            <!-- Stage : the real external window is positioned over this -->
+            <Border x:Name="Stage" Margin="14" CornerRadius="10"
+                    BorderBrush="{StaticResource StrokeSubtleBrush}" BorderThickness="1"
+                    Background="#0A0D14">
+                <Grid>
+                    <Rectangle RadiusX="10" RadiusY="10" Fill="{StaticResource DotGridBrush}"/>
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.7">
+                        <Border Width="62" Height="46" CornerRadius="6" HorizontalAlignment="Center"
+                                BorderBrush="{StaticResource StrokeStrongBrush}" BorderThickness="1.5">
+                            <Border Height="11" VerticalAlignment="Top" Background="{StaticResource StrokeStrongBrush}"
+                                    CornerRadius="5,5,0,0"/>
+                        </Border>
+                        <TextBlock Text="NO WINDOW STAGED" FontFamily="{StaticResource MonoFont}"
+                                   FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"
+                                   HorizontalAlignment="Center" Margin="0,18,0,0"/>
+                        <TextBlock Text="Open a terminal or attach a window to begin"
+                                   Foreground="{StaticResource TextMutedBrush}" FontSize="12"
+                                   HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
         </DockPanel>
     </Grid>
 </Window>

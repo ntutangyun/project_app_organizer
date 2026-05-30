@@ -65,6 +65,8 @@ public class ProjectViewModelTest
         vm.Activate(vm.Tabs[0]);
 
         Assert.Same(vm.Tabs[0], vm.ActiveTab);
+        Assert.True(vm.Tabs[0].IsActive);
+        Assert.False(vm.Tabs[1].IsActive);
         Assert.Contains("Hide:66", wm.Calls);
         Assert.Contains("MoveResize:55:0,0,800,600", wm.Calls);
     }

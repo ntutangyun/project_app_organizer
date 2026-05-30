@@ -88,4 +88,17 @@ internal static class Win32Interop
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
         public string szExeFile;
     }
+
+    // --- Dark title bar (DWM) ---
+
+    [DllImport("dwmapi.dll")]
+    public static extern int DwmSetWindowAttribute(nint hwnd, int attribute, ref int value, int size);
+
+    public const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+
+    public static void UseDarkTitleBar(nint hwnd)
+    {
+        int on = 1;
+        DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref on, sizeof(int));
+    }
 }
