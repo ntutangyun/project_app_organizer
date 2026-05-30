@@ -7,6 +7,32 @@
         TextOptions.TextFormattingMode="Ideal"
         Background="{StaticResource BaseBrush}">
 
+    <Window.Resources>
+        <!-- Shared multi-line todo row (used by both the active and completed lists) -->
+        <DataTemplate x:Key="TodoTemplate">
+            <Border x:Name="todoRow" Background="Transparent" Padding="8,5" Margin="0,1">
+                <DockPanel>
+                    <CheckBox IsChecked="{Binding Done}" Style="{StaticResource TodoCheck}"
+                              DockPanel.Dock="Left" Margin="0,2,11,0" VerticalAlignment="Top"/>
+                    <Button x:Name="todoDel" DockPanel.Dock="Right" Click="DeleteTodo_Click"
+                            Tag="{Binding}" Style="{StaticResource TabCloseButton}"
+                            Visibility="Hidden" VerticalAlignment="Top" ToolTip="Delete task"/>
+                    <TextBox x:Name="todoText" Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource TodoTextBox}" PreviewKeyDown="Todo_PreviewKeyDown"/>
+                </DockPanel>
+            </Border>
+            <DataTemplate.Triggers>
+                <Trigger SourceName="todoRow" Property="IsMouseOver" Value="True">
+                    <Setter TargetName="todoDel" Property="Visibility" Value="Visible"/>
+                </Trigger>
+                <DataTrigger Binding="{Binding Done}" Value="True">
+                    <Setter TargetName="todoText" Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+                    <Setter TargetName="todoText" Property="TextDecorations" Value="Strikethrough"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </Window.Resources>
+
     <Grid x:Name="Root" Opacity="0">
         <Grid.Triggers>
             <EventTrigger RoutedEvent="FrameworkElement.Loaded">
@@ -20,16 +46,17 @@
         </Grid.Triggers>
 
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="204"/>
-            <ColumnDefinition Width="270"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="204" MinWidth="150"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="288" MinWidth="210"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*" MinWidth="260"/>
         </Grid.ColumnDefinitions>
 
         <!-- ===================== Project rail ===================== -->
         <Border Grid.Column="0" Background="{StaticResource RailBrush}"
                 BorderBrush="{StaticResource StrokeSubtleBrush}" BorderThickness="0,0,1,0">
             <DockPanel>
-                <!-- Wordmark -->
                 <StackPanel DockPanel.Dock="Top" Margin="18,20,18,14">
                     <StackPanel Orientation="Horizontal">
                         <Path Data="M 7,0 L 14,7 L 7,14 L 0,7 Z" Fill="{StaticResource AccentBrush}"
@@ -45,26 +72,52 @@
                 <TextBlock DockPanel.Dock="Top" Text="PROJECTS" Style="{StaticResource SectionLabel}"
                            Margin="20,4,0,8"/>
 
-                <!-- New project -->
                 <Button DockPanel.Dock="Bottom" Content="+  New Project" Click="AddProject_Click"
                         Style="{StaticResource AccentButton}" Margin="14,10,14,16" Height="36"/>
 
                 <ListBox x:Name="ProjectList" Style="{StaticResource ProjectListBox}"
                          ItemsSource="{Binding Projects}"
-                         SelectedItem="{Binding SelectedProject, Mode=TwoWay}"/>
+                         SelectedItem="{Binding SelectedProject, Mode=TwoWay}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <DockPanel>
+                                <Button x:Name="projDel" DockPanel.Dock="Right" Click="DeleteProject_Click"
+                                        Tag="{Binding}" Style="{StaticResource TabCloseButton}"
+                                        Visibility="Hidden" ToolTip="Delete project"/>
+                                <Border x:Name="pdot" Width="7" Height="7" CornerRadius="4"
+                                        Background="{StaticResource TextMutedBrush}" VerticalAlignment="Center"
+                                        Margin="0,0,11,0"/>
+                                <TextBlock Text="{Binding Project.Name}" FontFamily="{StaticResource MonoFont}"
+                                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                            </DockPanel>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Value="True"
+                                             Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}">
+                                    <Setter TargetName="projDel" Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                                <DataTrigger Value="True"
+                                             Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}">
+                                    <Setter TargetName="projDel" Property="Visibility" Value="Visible"/>
+                                    <Setter TargetName="pdot" Property="Background" Value="{StaticResource AccentBrush}"/>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
             </DockPanel>
         </Border>
 
+        <GridSplitter Grid.Column="1"/>
+
         <!-- ===================== Detail panel ===================== -->
-        <Border Grid.Column="1" Background="{StaticResource PanelBrush}"
-                BorderBrush="{StaticResource StrokeSubtleBrush}" BorderThickness="0,0,1,0">
+        <Border Grid.Column="2" Background="{StaticResource PanelBrush}">
             <DockPanel DataContext="{Binding SelectedProject}" Margin="0,8,0,0">
 
                 <StackPanel DockPanel.Dock="Top" Margin="18,12,18,0">
                     <TextBox Text="{Binding Project.Name, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource TitleBox}"/>
                     <TextBox Text="{Binding Project.Description, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource BodyBox}" Height="68" Margin="0,12,0,0"/>
+                             Style="{StaticResource BodyBox}" Height="64" Margin="0,12,0,0"/>
 
                     <TextBlock Text="WORKING FOLDER" Style="{StaticResource SectionLabel}" Margin="2,18,0,6"/>
                     <Grid>
@@ -72,21 +125,29 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBox x:Name="FolderBox" Grid.Column="0"
-                                 Text="{Binding Project.FolderPath, UpdateSourceTrigger=PropertyChanged}"
-                                 Style="{StaticResource BodyBox}" AcceptsReturn="False" TextWrapping="NoWrap"
-                                 VerticalContentAlignment="Center" Height="34"/>
+                        <Grid Grid.Column="0">
+                            <TextBox x:Name="FolderBox"
+                                     Text="{Binding Project.FolderPath, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource BodyBox}" AcceptsReturn="False" TextWrapping="NoWrap"
+                                     FontFamily="{StaticResource MonoFont}" Foreground="{StaticResource TextPrimaryBrush}"
+                                     VerticalContentAlignment="Center" Height="36"/>
+                            <TextBlock Text="Not set — click Browse" IsHitTestVisible="False"
+                                       Foreground="{StaticResource TextMutedBrush}" Margin="12,0,0,0"
+                                       VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text, ElementName=FolderBox}" Value="">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
                         <Button Grid.Column="1" Content="Browse" Click="Browse_Click"
-                                Style="{StaticResource GhostButton}" Margin="8,0,0,0" Height="34"/>
-                    </Grid>
-
-                    <Grid Margin="2,18,0,8">
-                        <TextBlock Text="TODO" Style="{StaticResource SectionLabel}"/>
-                        <Border HorizontalAlignment="Right" Background="{StaticResource AccentSoftBrush}"
-                                CornerRadius="9" Padding="8,1" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding Project.Todos.Count}" FontFamily="{StaticResource MonoFont}"
-                                       FontSize="11" Foreground="{StaticResource AccentBrush}"/>
-                        </Border>
+                                Style="{StaticResource GhostButton}" Margin="8,0,0,0" Height="36"/>
                     </Grid>
                 </StackPanel>
 
@@ -94,41 +155,54 @@
                         Style="{StaticResource GhostButton}" HorizontalAlignment="Stretch"
                         Margin="18,8,18,18"/>
 
-                <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="10,4,6,0">
-                    <ItemsControl ItemsSource="{Binding Project.Todos}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border x:Name="todoRow" Background="Transparent" Padding="8,5" Margin="0,1">
-                                    <DockPanel>
-                                        <CheckBox IsChecked="{Binding Done}" Style="{StaticResource TodoCheck}"
-                                                  DockPanel.Dock="Left" Margin="0,0,11,0"/>
-                                        <Button x:Name="todoDel" DockPanel.Dock="Right" Click="DeleteTodo_Click"
-                                                Tag="{Binding}" Style="{StaticResource TabCloseButton}"
-                                                Visibility="Hidden" ToolTip="Delete task"/>
-                                        <TextBox x:Name="todoText"
-                                                 Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
-                                                 Style="{StaticResource TodoTextBox}"/>
-                                    </DockPanel>
-                                </Border>
-                                <DataTemplate.Triggers>
-                                    <Trigger SourceName="todoRow" Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="todoDel" Property="Visibility" Value="Visible"/>
-                                    </Trigger>
-                                    <DataTrigger Binding="{Binding Done}" Value="True">
-                                        <Setter TargetName="todoText" Property="Foreground"
-                                                Value="{StaticResource TextMutedBrush}"/>
-                                        <Setter TargetName="todoText" Property="TextDecorations" Value="Strikethrough"/>
-                                    </DataTrigger>
-                                </DataTemplate.Triggers>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="10,18,6,0">
+                    <StackPanel>
+                        <!-- Active -->
+                        <Grid Margin="8,0,8,6">
+                            <TextBlock Text="TODO" Style="{StaticResource SectionLabel}"/>
+                            <Border HorizontalAlignment="Right" Background="{StaticResource AccentSoftBrush}"
+                                    CornerRadius="9" Padding="8,1" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding ActiveTodos.Count}" FontFamily="{StaticResource MonoFont}"
+                                           FontSize="11" Foreground="{StaticResource AccentBrush}"/>
+                            </Border>
+                        </Grid>
+                        <ItemsControl x:Name="TodoList" ItemsSource="{Binding ActiveTodos}"
+                                      ItemTemplate="{StaticResource TodoTemplate}"/>
+
+                        <!-- Completed (collapses when empty) -->
+                        <StackPanel Margin="0,16,0,0">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding CompletedTodos.Count}" Value="0">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <Grid Margin="8,0,8,6">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="COMPLETED" Style="{StaticResource SectionLabel}"/>
+                                    <TextBlock Text="{Binding CompletedTodos.Count}" FontFamily="{StaticResource MonoFont}"
+                                               FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="8,0,0,0"/>
+                                </StackPanel>
+                                <Button HorizontalAlignment="Right" Content="Clear completed"
+                                        Click="DeleteAllCompleted_Click" Style="{StaticResource GhostButton}"
+                                        Padding="8,3" VerticalAlignment="Center"/>
+                            </Grid>
+                            <ItemsControl x:Name="CompletedList" ItemsSource="{Binding CompletedTodos}"
+                                          ItemTemplate="{StaticResource TodoTemplate}"/>
+                        </StackPanel>
+                    </StackPanel>
                 </ScrollViewer>
             </DockPanel>
         </Border>
 
+        <GridSplitter Grid.Column="3"/>
+
         <!-- ===================== Main : tabs + stage ===================== -->
-        <DockPanel Grid.Column="2" DataContext="{Binding SelectedProject}">
+        <DockPanel Grid.Column="4" DataContext="{Binding SelectedProject}">
 
             <Border DockPanel.Dock="Top" Background="{StaticResource PanelBrush}"
                     BorderBrush="{StaticResource StrokeSubtleBrush}" BorderThickness="0,0,0,1">
@@ -181,7 +255,6 @@
                 </DockPanel>
             </Border>
 
-            <!-- Stage : the real external window is positioned over this -->
             <Border x:Name="Stage" Margin="14" CornerRadius="10"
                     BorderBrush="{StaticResource StrokeSubtleBrush}" BorderThickness="1"
                     Background="#0A0D14">

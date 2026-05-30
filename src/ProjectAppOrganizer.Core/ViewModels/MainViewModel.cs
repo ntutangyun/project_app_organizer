@@ -50,4 +50,10 @@ public partial class MainViewModel : ObservableObject
         foreach (var project in Projects)
             project.ReleaseAll();
     }
+
+    public void CloseAll()
+    {
+        foreach (var project in Projects)
+            project.CloseAll();
+    }
 }

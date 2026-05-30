@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using ProjectAppOrganizer.Core.Models;
 using ProjectAppOrganizer.Core.Terminals;
@@ -27,10 +29,19 @@ public partial class ProjectViewModel : ObservableObject
         _launcher = launcher;
         _stage = stage;
         _stageRect = stageRect;
+
+        foreach (var todo in Project.Todos) Track(todo);
+        Project.Todos.CollectionChanged += OnTodosCollectionChanged;
     }
 
     public Project Project { get; }
     public ObservableCollection<WindowTab> Tabs { get; } = new();
+
+    // Todos split for display: active (pending) above, completed below.
+    public ObservableCollection<TodoItem> ActiveTodos { get; } = new();
+    public ObservableCollection<TodoItem> CompletedTodos { get; } = new();
+
+    // ---------------- terminals / windows ----------------
 
     public void OpenTerminal(TerminalProfile profile)
     {
@@ -57,17 +68,22 @@ public partial class ProjectViewModel : ObservableObject
         _stage.Stage(tab.Handle, _stageRect());
     }
 
-    public void CloseTab(WindowTab tab)
+    /// <summary>Close the underlying window/terminal and remove its tab.</summary>
+    public void CloseTab(WindowTab tab) => RemoveTab(tab, close: true);
+
+    /// <summary>Detach the window (leave it open and independent) and remove its tab.</summary>
+    public void DetachTab(WindowTab tab) => RemoveTab(tab, close: false);
+
+    private void RemoveTab(WindowTab tab, bool close)
     {
         Tabs.Remove(tab);
 
-        if (tab.IsTerminal)
+        if (close)
         {
             _wm.Close(tab.Handle);
         }
         else
         {
-            // Detach only: release ownership and hand the window back, floating.
             _wm.SetOwner(tab.Handle, 0);
             _wm.Restore(tab.Handle);
         }
@@ -80,14 +96,7 @@ public partial class ProjectViewModel : ObservableObject
         }
     }
 
-    public void AddTodo(string text) => Project.Todos.Add(new TodoItem { Text = text });
-    public void RemoveTodo(TodoItem item) => Project.Todos.Remove(item);
-
-    public void ReapplyStage(PixelRect rect) => _stage.Reapply(rect);
-    public void ReactivateStage(PixelRect rect) => _stage.Reactivate(rect);
-    public void HideStage() => _stage.HideCurrent();
-
-    /// <summary>Un-hide every staged window so none are orphaned when the app closes.</summary>
+    /// <summary>Detach every window (clear ownership, leave them floating).</summary>
     public void ReleaseAll()
     {
         foreach (var tab in Tabs)
@@ -96,4 +105,78 @@ public partial class ProjectViewModel : ObservableObject
             _wm.Show(tab.Handle);
         }
     }
+
+    /// <summary>Close every window/terminal.</summary>
+    public void CloseAll()
+    {
+        foreach (var tab in Tabs)
+            _wm.Close(tab.Handle);
+    }
+
+    // ---------------- todos ----------------
+
+    public TodoItem AddTodo(string text = "")
+    {
+        var item = new TodoItem { Text = text };
+        Project.Todos.Add(item);
+        return item;
+    }
+
+    public void RemoveTodo(TodoItem item) => Project.Todos.Remove(item);
+
+    public void DeleteAllCompleted()
+    {
+        foreach (var done in CompletedTodos.ToList())
+            Project.Todos.Remove(done);
+    }
+
+    private void OnTodosCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.Action == NotifyCollectionChangedAction.Reset)
+        {
+            foreach (var t in ActiveTodos.Concat(CompletedTodos).ToList())
+                t.PropertyChanged -= OnTodoChanged;
+            ActiveTodos.Clear();
+            CompletedTodos.Clear();
+            foreach (var t in Project.Todos) Track(t);
+            return;
+        }
+
+        if (e.OldItems is not null)
+            foreach (TodoItem t in e.OldItems) Untrack(t);
+        if (e.NewItems is not null)
+            foreach (TodoItem t in e.NewItems) Track(t);
+    }
+
+    private void Track(TodoItem t)
+    {
+        t.PropertyChanged += OnTodoChanged;
+        (t.Done ? CompletedTodos : ActiveTodos).Add(t);
+    }
+
+    private void Untrack(TodoItem t)
+    {
+        t.PropertyChanged -= OnTodoChanged;
+        ActiveTodos.Remove(t);
+        CompletedTodos.Remove(t);
+    }
+
+    private void OnTodoChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(TodoItem.Done) || sender is not TodoItem t) return;
+        if (t.Done)
+        {
+            if (ActiveTodos.Remove(t)) CompletedTodos.Add(t);
+        }
+        else
+        {
+            if (CompletedTodos.Remove(t)) ActiveTodos.Add(t);
+        }
+    }
+
+    // ---------------- stage helpers (called by the view) ----------------
+
+    public void ReapplyStage(PixelRect rect) => _stage.Reapply(rect);
+    public void ReactivateStage(PixelRect rect) => _stage.Reactivate(rect);
+    public void HideStage() => _stage.HideCurrent();
 }

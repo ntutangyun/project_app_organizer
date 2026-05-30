@@ -188,7 +188,9 @@
         <Setter Property="CaretBrush" Value="{StaticResource AccentBrush}"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Top"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="AcceptsReturn" Value="True"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
@@ -239,14 +241,7 @@
                 <ControlTemplate TargetType="ListBoxItem">
                     <Grid>
                         <Border x:Name="bd" Background="Transparent" CornerRadius="8" Padding="12,9">
-                            <DockPanel>
-                                <Button x:Name="del" DockPanel.Dock="Right" Style="{DynamicResource TabCloseButton}"
-                                        Visibility="Hidden" ToolTip="Delete project"/>
-                                <Border x:Name="dot" Width="7" Height="7" CornerRadius="4"
-                                        Background="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,11,0"/>
-                                <TextBlock Text="{Binding Project.Name}" FontFamily="{StaticResource MonoFont}"
-                                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                            </DockPanel>
+                            <ContentPresenter VerticalAlignment="Center"/>
                         </Border>
                         <Border x:Name="bar" Width="3" HorizontalAlignment="Left" CornerRadius="2"
                                 Background="{StaticResource AccentBrush}" Margin="0,6" Visibility="Collapsed"/>
@@ -254,13 +249,10 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="bd" Property="Background" Value="#141A26"/>
-                            <Setter TargetName="del" Property="Visibility" Value="Visible"/>
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="bd" Property="Background" Value="{StaticResource ElevatedBrush}"/>
                             <Setter TargetName="bar" Property="Visibility" Value="Visible"/>
-                            <Setter TargetName="dot" Property="Background" Value="{StaticResource AccentBrush}"/>
-                            <Setter TargetName="del" Property="Visibility" Value="Visible"/>
                             <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -365,6 +357,35 @@
                             </Track.DecreaseRepeatButton>
                         </Track>
                     </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===================== Column splitter ===================== -->
+    <Style TargetType="GridSplitter">
+        <Setter Property="Width" Value="6"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Stretch"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Cursor" Value="SizeWE"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="GridSplitter">
+                    <Border x:Name="bd" Background="{TemplateBinding Background}">
+                        <Rectangle x:Name="line" Width="1" HorizontalAlignment="Center"
+                                   Fill="{StaticResource StrokeSubtleBrush}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="line" Property="Fill" Value="{StaticResource AccentBrush}"/>
+                            <Setter TargetName="line" Property="Width" Value="2"/>
+                        </Trigger>
+                        <Trigger Property="IsDragging" Value="True">
+                            <Setter TargetName="line" Property="Fill" Value="{StaticResource AccentBrush}"/>
+                            <Setter TargetName="line" Property="Width" Value="2"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

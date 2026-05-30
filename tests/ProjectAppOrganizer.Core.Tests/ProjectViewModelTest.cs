@@ -99,7 +99,7 @@ public class ProjectViewModelTest
     }
 
     [Fact]
-    public void CloseTab_Attached_DetachesWithoutClosing()
+    public void CloseTab_ClosesWindowRegardlessOfType()
     {
         var vm = Make(out var wm, out _);
         vm.AttachWindow(new WindowInfo(55, "A", "a.exe", true, false));
@@ -109,8 +109,23 @@ public class ProjectViewModelTest
         vm.CloseTab(tab);
 
         Assert.Empty(vm.Tabs);
-        Assert.DoesNotContain("Close:55", wm.Calls); // attached windows are NOT closed
-        Assert.Contains("Restore:55", wm.Calls);     // restored to floating
+        Assert.Contains("Close:55", wm.Calls);
+    }
+
+    [Fact]
+    public void DetachTab_ReleasesWithoutClosing()
+    {
+        var vm = Make(out var wm, out _);
+        vm.AttachWindow(new WindowInfo(55, "A", "a.exe", true, false));
+        var tab = vm.Tabs[0];
+        wm.Calls.Clear();
+
+        vm.DetachTab(tab);
+
+        Assert.Empty(vm.Tabs);
+        Assert.DoesNotContain("Close:55", wm.Calls);
+        Assert.Contains("SetOwner:55:0", wm.Calls);
+        Assert.Contains("Restore:55", wm.Calls);
     }
 
     [Fact]
@@ -124,5 +139,57 @@ public class ProjectViewModelTest
 
         vm.RemoveTodo(vm.Project.Todos[0]);
         Assert.Empty(vm.Project.Todos);
+    }
+
+    [Fact]
+    public void AddTodo_GoesToActiveList()
+    {
+        var vm = Make(out _, out _);
+        var t = vm.AddTodo("task");
+        Assert.Contains(t, vm.ActiveTodos);
+        Assert.Empty(vm.CompletedTodos);
+    }
+
+    [Fact]
+    public void MarkingDone_MovesTodoToCompleted_AndBack()
+    {
+        var vm = Make(out _, out _);
+        var t = vm.AddTodo("task");
+
+        t.Done = true;
+        Assert.DoesNotContain(t, vm.ActiveTodos);
+        Assert.Contains(t, vm.CompletedTodos);
+
+        t.Done = false;
+        Assert.Contains(t, vm.ActiveTodos);
+        Assert.DoesNotContain(t, vm.CompletedTodos);
+    }
+
+    [Fact]
+    public void DeleteAllCompleted_RemovesOnlyCompleted()
+    {
+        var vm = Make(out _, out _);
+        var a = vm.AddTodo("keep");
+        var b = vm.AddTodo("done");
+        b.Done = true;
+
+        vm.DeleteAllCompleted();
+
+        Assert.Empty(vm.CompletedTodos);
+        Assert.Single(vm.ActiveTodos);
+        Assert.Contains(a, vm.Project.Todos);
+        Assert.DoesNotContain(b, vm.Project.Todos);
+    }
+
+    [Fact]
+    public void ExistingDoneTodos_LoadIntoCompleted()
+    {
+        var project = new Project { Name = "P" };
+        project.Todos.Add(new TodoItem { Text = "done", Done = true });
+        project.Todos.Add(new TodoItem { Text = "todo" });
+        var vm = Make(out _, out _, project);
+
+        Assert.Single(vm.CompletedTodos);
+        Assert.Single(vm.ActiveTodos);
     }
 }

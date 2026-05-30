@@ -26,12 +26,10 @@ public partial class MainWindow : Window
                 new StageManager(wm, () => _wm.SelfHandle), GetStageRect));
         _vm.Load();
         DataContext = _vm;
-        ProjectList.AddHandler(System.Windows.Controls.Primitives.ButtonBase.ClickEvent,
-            new RoutedEventHandler(OnProjectDeleteClick));
 
         Loaded += OnLoaded;
         StateChanged += OnStateChanged;
-        Closing += (_, _) => { _vm.ReleaseAll(); _vm.Save(); };
+        Closing += OnClosing;
         PreviewMouseWheel += Window_PreviewMouseWheel;
     }
 
@@ -101,8 +99,10 @@ public partial class MainWindow : Window
 
     private void AddTodo_Click(object sender, RoutedEventArgs e)
     {
-        _vm.SelectedProject?.AddTodo("New task");
+        if (_vm.SelectedProject is null) return;
+        var item = _vm.SelectedProject.AddTodo();
         _vm.Save();
+        FocusTodo(item);
     }
 
     private void DeleteTodo_Click(object sender, RoutedEventArgs e)
@@ -114,24 +114,26 @@ public partial class MainWindow : Window
         }
     }
 
-    // Project delete buttons live inside the ListBox item template, so their clicks
-    // bubble up here. RepeatButtons (scrollbar) are not Button, so they're ignored.
-    private void OnProjectDeleteClick(object sender, RoutedEventArgs e)
+    private void DeleteAllCompleted_Click(object sender, RoutedEventArgs e)
     {
-        if (e.Source is Button btn && btn.DataContext is ProjectViewModel vm)
-        {
+        _vm.SelectedProject?.DeleteAllCompleted();
+        _vm.Save();
+    }
+
+    private void DeleteProject_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.Tag is ProjectViewModel vm)
             DeleteProject(vm);
-            e.Handled = true;
-        }
     }
 
     private void DeleteProject(ProjectViewModel vm)
     {
-        var label = string.IsNullOrWhiteSpace(vm.Project.Name) ? "this project" : $"\"{vm.Project.Name}\"";
-        if (MessageBox.Show($"Delete {label}? Its tasks will be removed.", "Delete project",
-                MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
-            return;
-        vm.ReleaseAll();              // un-hide / un-own any staged windows so they aren't orphaned
+        var label = string.IsNullOrWhiteSpace(vm.Project.Name) ? "this project" : $"“{vm.Project.Name}”";
+        var choice = Views.ChoiceDialog.Ask(this, "Delete project",
+            $"Delete {label}? Its title, description and tasks will be removed. Any windows docked here are detached (left open and independent).",
+            "Delete", "Cancel");
+        if (choice != 0) return;
+        vm.ReleaseAll();   // detach docked windows so they remain open and independent
         _vm.RemoveProject(vm);
         _vm.Save();
     }
@@ -202,7 +204,98 @@ public partial class MainWindow : Window
 
     private void CloseTab_Click(object sender, RoutedEventArgs e)
     {
-        if (((FrameworkElement)sender).Tag is WindowTab tab)
-            _vm.SelectedProject?.CloseTab(tab);
+        if (((FrameworkElement)sender).Tag is not WindowTab tab) return;
+        var project = _vm.SelectedProject;
+        if (project is null) return;
+
+        var kind = tab.IsTerminal ? "terminal" : "window";
+        var choice = Views.ChoiceDialog.Ask(this, "Remove tab",
+            $"Detach the {kind} to keep it open and independent, or close it entirely?",
+            "Detach", "Close", "Cancel");
+        if (choice == 0) project.DetachTab(tab);
+        else if (choice == 1) project.CloseTab(tab);
+    }
+
+    private void OnClosing(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        var hasWindows = false;
+        foreach (var p in _vm.Projects)
+            if (p.Tabs.Count > 0) { hasWindows = true; break; }
+
+        if (hasWindows)
+        {
+            var choice = Views.ChoiceDialog.Ask(this, "Close organizer",
+                "What should happen to the docked terminals and windows?",
+                "Detach (keep open)", "Close all", "Cancel");
+            if (choice != 0 && choice != 1) { e.Cancel = true; return; }
+            if (choice == 0) _vm.ReleaseAll(); else _vm.CloseAll();
+        }
+        _vm.Save();
+    }
+
+    private void Todo_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key != System.Windows.Input.Key.Enter) return;
+        var tb = (TextBox)sender;
+
+        if ((System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Alt) != 0)
+        {
+            // Alt+Enter inserts a line break.
+            var caret = tb.CaretIndex;
+            tb.Text = tb.Text.Insert(caret, "\r\n");
+            tb.CaretIndex = caret + 2;
+            e.Handled = true;
+            return;
+        }
+
+        // Plain Enter: move to the next task (creating one if at the end).
+        e.Handled = true;
+        var project = _vm.SelectedProject;
+        if (project is null || tb.DataContext is not TodoItem current) return;
+
+        var list = project.ActiveTodos.Contains(current) ? project.ActiveTodos : project.CompletedTodos;
+        var idx = list.IndexOf(current);
+        if (idx >= 0 && idx + 1 < list.Count)
+        {
+            FocusTodo(list[idx + 1]);
+        }
+        else
+        {
+            var item = project.AddTodo();
+            _vm.Save();
+            FocusTodo(item);
+        }
+    }
+
+    private void FocusTodo(TodoItem item)
+    {
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            var tb = FindTodoTextBox(TodoList, item) ?? FindTodoTextBox(CompletedList, item);
+            if (tb is null) return;
+            tb.Focus();
+            tb.CaretIndex = tb.Text.Length;
+        }), System.Windows.Threading.DispatcherPriority.Background);
+    }
+
+    private static TextBox? FindTodoTextBox(ItemsControl list, object item)
+    {
+        list.UpdateLayout();
+        if (list.ItemContainerGenerator.ContainerFromItem(item) is not DependencyObject container)
+            return null;
+        return FindDescendant<TextBox>(container);
+    }
+
+    private static T? FindDescendant<T>(DependencyObject root) where T : DependencyObject
+    {
+        var count = System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);
+        for (var i = 0; i < count; i++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+            if (child is T hit) return hit;
+            var deeper = FindDescendant<T>(child);
+            if (deeper is not null) return deeper;
+        }
+        return null;
     }
 }
