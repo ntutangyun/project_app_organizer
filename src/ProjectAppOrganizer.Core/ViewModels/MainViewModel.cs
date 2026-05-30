@@ -44,4 +44,10 @@ public partial class MainViewModel : ObservableObject
     }
 
     public void Save() => _store.Save(Projects.Select(p => p.Project));
+
+    public void ReleaseAll()
+    {
+        foreach (var project in Projects)
+            project.ReleaseAll();
+    }
 }

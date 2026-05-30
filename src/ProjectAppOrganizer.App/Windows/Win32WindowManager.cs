@@ -37,9 +37,12 @@ public class Win32WindowManager : IWindowManager
 
     public void MoveResize(nint handle, PixelRect rect) =>
         Win32Interop.SetWindowPos(handle, Win32Interop.HWND_TOP,
-            rect.X, rect.Y, rect.Width, rect.Height, Win32Interop.SWP_SHOWWINDOW);
+            rect.X, rect.Y, rect.Width, rect.Height,
+            Win32Interop.SWP_SHOWWINDOW | Win32Interop.SWP_NOACTIVATE);
 
-    public void Minimize(nint handle) => Win32Interop.ShowWindow(handle, Win32Interop.SW_MINIMIZE);
+    public void Show(nint handle) => Win32Interop.ShowWindow(handle, Win32Interop.SW_SHOWNA);
+
+    public void Hide(nint handle) => Win32Interop.ShowWindow(handle, Win32Interop.SW_HIDE);
 
     public void Restore(nint handle) => Win32Interop.ShowWindow(handle, Win32Interop.SW_RESTORE);
 

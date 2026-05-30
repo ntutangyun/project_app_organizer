@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using ProjectAppOrganizer.App.Windows;
 using ProjectAppOrganizer.Core.Models;
 using ProjectAppOrganizer.Core.Terminals;
 
@@ -15,10 +16,22 @@ public class ProcessTerminalLauncher : ITerminalLauncher
     public nint Launch(TerminalProfile profile)
     {
         var spec = ShellCommand.Build(profile, _gitBashPath);
+
+        // cmd/powershell launched directly hand off to the shared default terminal
+        // (Windows Terminal), whose window can't be staged per-tab. Hosting them under
+        // an explicit conhost forces a dedicated, ownable classic console window.
+        var fileName = spec.FileName;
+        var arguments = spec.Arguments;
+        if (profile.Shell is ShellType.Cmd or ShellType.PowerShell)
+        {
+            fileName = "conhost.exe";
+            arguments = $"{spec.FileName} {spec.Arguments}".Trim();
+        }
+
         var psi = new ProcessStartInfo
         {
-            FileName = spec.FileName,
-            Arguments = spec.Arguments,
+            FileName = fileName,
+            Arguments = arguments,
             WorkingDirectory =
                 Directory.Exists(spec.WorkingDirectory) ? spec.WorkingDirectory : Environment.CurrentDirectory,
             UseShellExecute = true
@@ -27,14 +40,16 @@ public class ProcessTerminalLauncher : ITerminalLauncher
         var process = Process.Start(psi);
         if (process is null) return 0;
 
-        // Poll up to ~3s for the main window handle to appear.
-        for (var i = 0; i < 30; i++)
+        // The visible window is owned by the shell process or a descendant
+        // (conhost -> shell, git-bash -> mintty), so poll the process tree (up to ~5s)
+        // for a top-level window rather than the unreliable MainWindowHandle.
+        for (var i = 0; i < 50; i++)
         {
-            process.Refresh();
-            if (process.MainWindowHandle != 0) return process.MainWindowHandle;
+            var handle = ProcessWindowResolver.FindMainWindow(process.Id);
+            if (handle != 0) return handle;
             Thread.Sleep(100);
         }
-        return process.MainWindowHandle;
+        return 0;
     }
 
     private static string DetectGitBash()

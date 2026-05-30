@@ -65,8 +65,22 @@ public class ProjectViewModelTest
         vm.Activate(vm.Tabs[0]);
 
         Assert.Same(vm.Tabs[0], vm.ActiveTab);
-        Assert.Contains("Minimize:66", wm.Calls);
+        Assert.Contains("Hide:66", wm.Calls);
         Assert.Contains("MoveResize:55:0,0,800,600", wm.Calls);
+    }
+
+    [Fact]
+    public void ReleaseAll_ShowsEveryTabWindow()
+    {
+        var vm = Make(out var wm, out _);
+        vm.AttachWindow(new WindowInfo(55, "A", "a.exe", true, false));
+        vm.AttachWindow(new WindowInfo(66, "B", "b.exe", true, false));
+        wm.Calls.Clear();
+
+        vm.ReleaseAll();
+
+        Assert.Contains("Show:55", wm.Calls);
+        Assert.Contains("Show:66", wm.Calls);
     }
 
     [Fact]

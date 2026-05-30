@@ -8,7 +8,7 @@ public class StageManagerTest
     private static readonly PixelRect Stage = new(100, 50, 800, 600);
 
     [Fact]
-    public void Stage_RestoresMovesAndFocusesWindow()
+    public void Stage_ShowsMovesAndFocusesWindow()
     {
         var wm = new FakeWindowManager();
         var sm = new StageManager(wm);
@@ -16,13 +16,13 @@ public class StageManagerTest
         sm.Stage(7, Stage);
 
         Assert.Equal(
-            new[] { "Restore:7", "MoveResize:7:100,50,800,600", "BringToFront:7" },
+            new[] { "Show:7", "MoveResize:7:100,50,800,600", "BringToFront:7" },
             wm.Calls);
         Assert.Equal((nint)7, sm.Current);
     }
 
     [Fact]
-    public void Stage_MinimizesPreviouslyStagedWindow()
+    public void Stage_HidesPreviouslyStagedWindow()
     {
         var wm = new FakeWindowManager();
         var sm = new StageManager(wm);
@@ -31,13 +31,14 @@ public class StageManagerTest
         wm.Calls.Clear();
         sm.Stage(8, Stage);
 
-        Assert.Equal("Minimize:7", wm.Calls[0]);
+        Assert.Equal("Hide:7", wm.Calls[0]);
+        Assert.Contains("Show:8", wm.Calls);
         Assert.Contains("MoveResize:8:100,50,800,600", wm.Calls);
         Assert.Equal((nint)8, sm.Current);
     }
 
     [Fact]
-    public void Stage_SameWindowTwice_DoesNotMinimizeIt()
+    public void Stage_SameWindowTwice_DoesNotHideIt()
     {
         var wm = new FakeWindowManager();
         var sm = new StageManager(wm);
@@ -46,7 +47,7 @@ public class StageManagerTest
         wm.Calls.Clear();
         sm.Stage(7, Stage);
 
-        Assert.DoesNotContain("Minimize:7", wm.Calls);
+        Assert.DoesNotContain("Hide:7", wm.Calls);
     }
 
     [Fact]
@@ -74,15 +75,30 @@ public class StageManagerTest
     }
 
     [Fact]
-    public void MinimizeCurrent_MinimizesAndKeepsCurrentForRestore()
+    public void Reactivate_ShowsMovesAndFocusesCurrent()
     {
         var wm = new FakeWindowManager();
         var sm = new StageManager(wm);
         sm.Stage(7, Stage);
         wm.Calls.Clear();
 
-        sm.MinimizeCurrent();
+        sm.Reactivate(new PixelRect(0, 0, 1000, 700));
 
-        Assert.Equal(new[] { "Minimize:7" }, wm.Calls);
+        Assert.Equal(
+            new[] { "Show:7", "MoveResize:7:0,0,1000,700", "BringToFront:7" },
+            wm.Calls);
+    }
+
+    [Fact]
+    public void HideCurrent_HidesCurrentWindow()
+    {
+        var wm = new FakeWindowManager();
+        var sm = new StageManager(wm);
+        sm.Stage(7, Stage);
+        wm.Calls.Clear();
+
+        sm.HideCurrent();
+
+        Assert.Equal(new[] { "Hide:7" }, wm.Calls);
     }
 }

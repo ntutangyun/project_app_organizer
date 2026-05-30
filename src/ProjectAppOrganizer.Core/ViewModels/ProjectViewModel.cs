@@ -81,5 +81,13 @@ public partial class ProjectViewModel : ObservableObject
     public void RemoveTodo(TodoItem item) => Project.Todos.Remove(item);
 
     public void ReapplyStage(PixelRect rect) => _stage.Reapply(rect);
-    public void MinimizeStage() => _stage.MinimizeCurrent();
+    public void ReactivateStage(PixelRect rect) => _stage.Reactivate(rect);
+    public void HideStage() => _stage.HideCurrent();
+
+    /// <summary>Un-hide every staged window so none are orphaned when the app closes.</summary>
+    public void ReleaseAll()
+    {
+        foreach (var tab in Tabs)
+            _wm.Show(tab.Handle);
+    }
 }
