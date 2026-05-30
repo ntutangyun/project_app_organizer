@@ -1,0 +1,12 @@
+# Brainstorming companion artifacts
+.superpowers/
+
+# .NET build output
+bin/
+obj/
+*.user
+.vs/
+
+# Rider / VS
+.idea/
+*.suo
