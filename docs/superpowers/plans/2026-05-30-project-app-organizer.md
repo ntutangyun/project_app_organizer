@@ -6,9 +6,9 @@
 
 **Architecture:** Three projects — `ProjectAppOrganizer.Core` (pure, testable: models, persistence, view-models, stage logic behind an `IWindowManager` interface), `ProjectAppOrganizer.App` (WPF UI + concrete Win32 interop + DI wiring), and `ProjectAppOrganizer.Core.Tests` (xUnit). The Docker/stage model moves/resizes real OS windows into a reserved screen region rather than embedding them.
 
-**Tech Stack:** C# / .NET 8 (`net8.0-windows`), WPF, CommunityToolkit.Mvvm, Microsoft.Extensions.DependencyInjection, System.Text.Json, xUnit. Win32 via P/Invoke (`user32.dll`).
+**Tech Stack:** C# / .NET 10 (`net10.0-windows`), WPF, CommunityToolkit.Mvvm, Microsoft.Extensions.DependencyInjection, System.Text.Json, xUnit. Win32 via P/Invoke (`user32.dll`).
 
-**Prerequisite:** .NET 8 SDK installed (`dotnet --version` ≥ 8.0). If missing, install from https://dotnet.microsoft.com/download/dotnet/8.0.
+**Prerequisite:** .NET 10 SDK installed (`dotnet --version` ≥ 10.0). Confirmed present on this machine.
 
 ---
 
