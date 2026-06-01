@@ -10,3 +10,6 @@ obj/
 # Rider / VS
 .idea/
 *.suo
+
+# Local publish output (desktop shortcut target)
+dist/

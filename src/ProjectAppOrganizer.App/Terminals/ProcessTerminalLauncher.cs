@@ -15,6 +15,18 @@ public class ProcessTerminalLauncher : ITerminalLauncher
 
     public nint Launch(TerminalProfile profile)
     {
+        // A blank OR non-existent working directory makes git-bash exit instantly
+        // (--cd="" / --cd to a missing path opens no window). Normalize a missing
+        // path to blank so ShellCommand omits --cd and the shell opens at home.
+        if (!string.IsNullOrWhiteSpace(profile.WorkingDirectory) && !Directory.Exists(profile.WorkingDirectory))
+            profile = new TerminalProfile
+            {
+                Name = profile.Name,
+                Shell = profile.Shell,
+                WorkingDirectory = string.Empty,
+                StartupCommand = profile.StartupCommand
+            };
+
         var spec = ShellCommand.Build(profile, _gitBashPath);
 
         // cmd/powershell launched directly hand off to the shared default terminal

@@ -28,12 +28,12 @@ public class ProjectViewModelTest
     }
 
     [Fact]
-    public void OpenTerminal_AddsTabAndStagesIt()
+    public async Task OpenTerminal_AddsTabAndStagesIt()
     {
         var vm = Make(out var wm, out var launcher);
         var profile = new TerminalProfile { Name = "bash", Shell = ShellType.GitBash };
 
-        vm.OpenTerminal(profile);
+        await vm.OpenTerminalAsync(profile);
 
         Assert.Single(vm.Tabs);
         Assert.Equal(TabKind.Terminal, vm.Tabs[0].Kind);
@@ -86,10 +86,10 @@ public class ProjectViewModelTest
     }
 
     [Fact]
-    public void CloseTab_Terminal_ClosesProcessWindow()
+    public async Task CloseTab_Terminal_ClosesProcessWindow()
     {
         var vm = Make(out var wm, out _);
-        vm.OpenTerminal(new TerminalProfile { Name = "t" });
+        await vm.OpenTerminalAsync(new TerminalProfile { Name = "t" });
         var tab = vm.Tabs[0];
 
         vm.CloseTab(tab);

@@ -183,24 +183,24 @@ public partial class MainWindow : Window
         }
     }
 
-    private void LaunchShell_Click(object sender, RoutedEventArgs e)
+    private async void LaunchShell_Click(object sender, RoutedEventArgs e)
     {
         if (sender is MenuItem mi && mi.Tag is string tag &&
             Enum.TryParse<ShellType>(tag, out var shell))
-            LaunchTerminal(shell);
+            await LaunchTerminal(shell);
     }
 
-    private void LaunchTerminal(ShellType shell)
+    private Task LaunchTerminal(ShellType shell)
     {
         var project = _vm.SelectedProject;
-        if (project is null) return;
+        if (project is null) return Task.CompletedTask;
         var name = shell switch
         {
             ShellType.GitBash => "bash",
             ShellType.Cmd => "cmd",
             _ => "pwsh"
         };
-        project.OpenTerminal(new TerminalProfile
+        return project.OpenTerminalAsync(new TerminalProfile
         {
             Name = name,
             Shell = shell,

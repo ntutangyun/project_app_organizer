@@ -22,9 +22,12 @@ public static class ShellCommand
                 string.IsNullOrWhiteSpace(cmd) ? "-NoExit" : $"-NoExit -Command \"{cmd}\"",
                 p.WorkingDirectory),
 
+            // git-bash.exe exits immediately (and never opens a window) if handed
+            // --cd="" — so only pass --cd when a working directory is actually set;
+            // otherwise let git bash open at its default home directory.
             ShellType.GitBash => new ShellSpec(
                 gitBashPath,
-                $"--cd=\"{p.WorkingDirectory}\"",
+                string.IsNullOrWhiteSpace(p.WorkingDirectory) ? "" : $"--cd=\"{p.WorkingDirectory}\"",
                 p.WorkingDirectory),
 
             _ => throw new ArgumentOutOfRangeException(nameof(p.Shell))

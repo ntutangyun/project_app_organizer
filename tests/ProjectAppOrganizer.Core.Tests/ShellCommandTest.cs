@@ -43,4 +43,18 @@ public class ShellCommandTest
         Assert.Equal(@"C:\Git\git-bash.exe", spec.FileName);
         Assert.Equal("--cd=\"C:\\repo\"", spec.Arguments);
     }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void GitBash_WithoutWorkingDirectory_OmitsCdArgument(string workingDir)
+    {
+        // git-bash.exe exits immediately (no window) if given --cd="" — so when no
+        // working folder is set we must omit --cd entirely and let it open at home.
+        var p = new TerminalProfile { Shell = ShellType.GitBash, WorkingDirectory = workingDir };
+        var spec = ShellCommand.Build(p, @"C:\Git\git-bash.exe");
+
+        Assert.Equal(@"C:\Git\git-bash.exe", spec.FileName);
+        Assert.Equal("", spec.Arguments);
+    }
 }

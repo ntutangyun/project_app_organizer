@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using ProjectAppOrganizer.Core.Models;
 using ProjectAppOrganizer.Core.Terminals;
@@ -43,9 +44,14 @@ public partial class ProjectViewModel : ObservableObject
 
     // ---------------- terminals / windows ----------------
 
-    public void OpenTerminal(TerminalProfile profile)
+    /// <summary>
+    /// Launch a terminal without blocking the caller's thread. The launch + window
+    /// resolution (which can poll for up to several seconds) runs on a background
+    /// thread; the tab is created and staged back on the captured (UI) context.
+    /// </summary>
+    public async Task OpenTerminalAsync(TerminalProfile profile)
     {
-        var handle = _launcher.Launch(profile);
+        var handle = await Task.Run(() => _launcher.Launch(profile)).ConfigureAwait(true);
         if (handle == 0) return;
         var tab = new WindowTab(handle, profile.Name, TabKind.Terminal);
         Tabs.Add(tab);
