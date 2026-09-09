@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using ProjectAppOrganizer.App.Windows;
@@ -169,6 +169,30 @@ public partial class MainWindow : Window
         {
             FolderBox.Text = dlg.FolderName;   // writes back to Project.FolderPath via binding
             _vm.Save();
+        }
+    }
+
+    private void OpenFolder_Click(object sender, RoutedEventArgs e)
+    {
+        if (_vm.SelectedProject is null) return;
+        var path = _vm.SelectedProject.Project.FolderPath;
+        if (string.IsNullOrWhiteSpace(path) || !System.IO.Directory.Exists(path))
+        {
+            MessageBox.Show(this, "The working folder is not set or does not exist.",
+                "Open folder", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", $"\"{path}\"")
+            {
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"Could not open folder:\n{ex.Message}", "Open folder",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 

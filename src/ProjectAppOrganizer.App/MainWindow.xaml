@@ -1,4 +1,4 @@
-<Window x:Class="ProjectAppOrganizer.App.MainWindow"
+﻿<Window x:Class="ProjectAppOrganizer.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Project App Organizer" Height="820" Width="1320"
@@ -163,8 +163,12 @@
                                     </TextBlock.Style>
                                 </TextBlock>
                             </Grid>
-                            <Button Grid.Column="1" Content="Browse" Click="Browse_Click"
-                                    Style="{StaticResource GhostButton}" Margin="8,0,0,0" Height="34"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <Button Content="Browse" Click="Browse_Click"
+                                        Style="{StaticResource GhostButton}" Margin="8,0,0,0" Height="34"/>
+                                <Button Content="Open" Click="OpenFolder_Click" ToolTip="Open working folder in Explorer"
+                                        Style="{StaticResource GhostButton}" Margin="8,0,0,0" Height="34"/>
+                            </StackPanel>
                         </Grid>
                     </StackPanel>
 
