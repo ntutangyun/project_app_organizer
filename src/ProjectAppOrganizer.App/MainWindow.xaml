@@ -134,11 +134,8 @@
                     <StackPanel DockPanel.Dock="Top" Margin="18,12,18,0">
                         <TextBox Text="{Binding Project.Name, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource TitleBox}"/>
-                        <TextBox Text="{Binding Project.Description, UpdateSourceTrigger=PropertyChanged}"
-                                 Style="{StaticResource BodyBox}" MinHeight="64" MaxHeight="200"
-                                 VerticalScrollBarVisibility="Auto" Margin="0,12,0,0"/>
 
-                        <TextBlock Text="WORKING FOLDER" Style="{StaticResource SectionLabel}" Margin="2,18,0,6"/>
+                        <TextBlock Text="WORKING FOLDER" Style="{StaticResource SectionLabel}" Margin="2,14,0,6"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -147,7 +144,8 @@
                             <Grid Grid.Column="0">
                                 <TextBox x:Name="FolderBox"
                                          Text="{Binding Project.FolderPath, UpdateSourceTrigger=PropertyChanged}"
-                                         Style="{StaticResource PathBox}" Height="34"/>
+                                         Style="{StaticResource PathBox}" Height="34"
+                                         LostFocus="FolderBox_LostFocus" KeyDown="FolderBox_KeyDown"/>
                                 <TextBlock Text="Not set — click Browse" IsHitTestVisible="False"
                                            Foreground="{StaticResource TextMutedBrush}" Margin="12,0,0,0"
                                            VerticalAlignment="Center">
@@ -170,51 +168,138 @@
                                         Style="{StaticResource GhostButton}" Margin="8,0,0,0" Height="34"/>
                             </StackPanel>
                         </Grid>
+
+                        <!-- Collapsible notes & tasks -->
+                        <Border Height="1" Background="{StaticResource StrokeSubtleBrush}" Margin="0,16,0,0"/>
+                        <ToggleButton x:Name="NotesToggle" IsChecked="{Binding Project.NotesExpanded, Mode=TwoWay}"
+                                      Checked="NotesToggle_Toggled" Unchecked="NotesToggle_Toggled"
+                                      Cursor="Hand" Focusable="False" HorizontalContentAlignment="Stretch" Margin="0,6,0,0">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border Background="Transparent" Padding="2,6">
+                                        <DockPanel>
+                                            <ToggleButton Style="{StaticResource Chevron}" DockPanel.Dock="Left"
+                                                          IsChecked="{Binding IsChecked, RelativeSource={RelativeSource TemplatedParent}}"
+                                                          IsHitTestVisible="False" Margin="0,0,6,0"/>
+                                            <Border DockPanel.Dock="Right" Background="{StaticResource AccentSoftBrush}"
+                                                    CornerRadius="9" Padding="8,1" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding ActiveTodos.Count}" FontFamily="{StaticResource MonoFont}"
+                                                           FontSize="11" Foreground="{StaticResource AccentBrush}"/>
+                                            </Border>
+                                            <TextBlock Text="NOTES &amp; TASKS" Style="{StaticResource SectionLabel}"
+                                                       VerticalAlignment="Center"/>
+                                        </DockPanel>
+                                    </Border>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
+                        <StackPanel Visibility="{Binding IsChecked, ElementName=NotesToggle, Converter={StaticResource BoolToVis}}">
+                            <TextBox Text="{Binding Project.Description, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource BodyBox}" MinHeight="48" MaxHeight="160"
+                                     VerticalScrollBarVisibility="Auto" Margin="0,4,0,0"/>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="260" Margin="-8,10,-12,0">
+                                <StackPanel>
+                                    <ItemsControl x:Name="TodoList" ItemsSource="{Binding ActiveTodos}"
+                                                  ItemTemplate="{StaticResource TodoTemplate}"/>
+
+                                    <StackPanel Margin="0,10,0,0">
+                                        <StackPanel.Style>
+                                            <Style TargetType="StackPanel">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding CompletedTodos.Count}" Value="0">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </StackPanel.Style>
+                                        <Grid Margin="8,0,8,6">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="COMPLETED" Style="{StaticResource SectionLabel}"/>
+                                                <TextBlock Text="{Binding CompletedTodos.Count}" FontFamily="{StaticResource MonoFont}"
+                                                           FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="8,0,0,0"/>
+                                            </StackPanel>
+                                            <Button HorizontalAlignment="Right" Content="Clear completed"
+                                                    Click="DeleteAllCompleted_Click" Style="{StaticResource GhostButton}"
+                                                    Padding="8,3" VerticalAlignment="Center"/>
+                                        </Grid>
+                                        <ItemsControl x:Name="CompletedList" ItemsSource="{Binding CompletedTodos}"
+                                                      ItemTemplate="{StaticResource TodoTemplate}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </ScrollViewer>
+                            <Button Content="+  Add task" Click="AddTodo_Click"
+                                    Style="{StaticResource GhostButton}" HorizontalAlignment="Stretch" Margin="0,8,0,0"/>
+                        </StackPanel>
+                        <Border Height="1" Background="{StaticResource StrokeSubtleBrush}" Margin="0,10,0,0"/>
+
+                        <!-- Files header -->
+                        <Grid Margin="2,14,0,6">
+                            <TextBlock Text="FILES" Style="{StaticResource SectionLabel}" VerticalAlignment="Center"/>
+                            <ToggleButton Content="show hidden" Style="{StaticResource PillToggle}"
+                                          IsChecked="{Binding Files.ShowHidden, Mode=TwoWay}"
+                                          ToolTip="Show .git, node_modules, bin, obj and similar folders"
+                                          HorizontalAlignment="Right"/>
+                        </Grid>
                     </StackPanel>
 
-                    <Button DockPanel.Dock="Bottom" Content="+  Add task" Click="AddTodo_Click"
-                            Style="{StaticResource GhostButton}" HorizontalAlignment="Stretch"
-                            Margin="18,8,18,18"/>
-
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="10,18,6,0">
-                        <StackPanel>
-                            <Grid Margin="8,0,8,6">
-                                <TextBlock Text="TODO" Style="{StaticResource SectionLabel}"/>
-                                <Border HorizontalAlignment="Right" Background="{StaticResource AccentSoftBrush}"
-                                        CornerRadius="9" Padding="8,1" VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding ActiveTodos.Count}" FontFamily="{StaticResource MonoFont}"
-                                               FontSize="11" Foreground="{StaticResource AccentBrush}"/>
-                                </Border>
-                            </Grid>
-                            <ItemsControl x:Name="TodoList" ItemsSource="{Binding ActiveTodos}"
-                                          ItemTemplate="{StaticResource TodoTemplate}"/>
-
-                            <StackPanel Margin="0,16,0,0">
-                                <StackPanel.Style>
-                                    <Style TargetType="StackPanel">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding CompletedTodos.Count}" Value="0">
-                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </StackPanel.Style>
-                                <Grid Margin="8,0,8,6">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="COMPLETED" Style="{StaticResource SectionLabel}"/>
-                                        <TextBlock Text="{Binding CompletedTodos.Count}" FontFamily="{StaticResource MonoFont}"
-                                                   FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="8,0,0,0"/>
+                    <!-- File tree -->
+                    <Grid Margin="10,0,6,10">
+                        <TreeView x:Name="FileTree" Style="{StaticResource FileTreeView}"
+                                  ItemsSource="{Binding Files.Roots}"
+                                  MouseDoubleClick="FileTree_MouseDoubleClick"
+                                  PreviewKeyDown="FileTree_PreviewKeyDown"
+                                  PreviewMouseRightButtonDown="FileTree_PreviewMouseRightButtonDown">
+                            <TreeView.ItemTemplate>
+                                <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                                    <StackPanel Orientation="Horizontal" ToolTip="{Binding FullPath}">
+                                        <Path x:Name="icon" Width="13" Height="11" Stretch="Uniform" Margin="0,0,7,0"
+                                              VerticalAlignment="Center" Fill="{StaticResource TextMutedBrush}"
+                                              Data="M 2,1 L 7,1 L 10,4 L 10,13 L 2,13 Z"/>
+                                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
+                                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=TreeViewItem}}"
+                                                   TextTrimming="CharacterEllipsis"/>
                                     </StackPanel>
-                                    <Button HorizontalAlignment="Right" Content="Clear completed"
-                                            Click="DeleteAllCompleted_Click" Style="{StaticResource GhostButton}"
-                                            Padding="8,3" VerticalAlignment="Center"/>
-                                </Grid>
-                                <ItemsControl x:Name="CompletedList" ItemsSource="{Binding CompletedTodos}"
-                                              ItemTemplate="{StaticResource TodoTemplate}"/>
-                            </StackPanel>
+                                    <HierarchicalDataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding IsDirectory}" Value="True">
+                                            <Setter TargetName="icon" Property="Data"
+                                                    Value="M 0,2 L 5,2 L 6.5,3.5 L 14,3.5 L 14,12 L 0,12 Z"/>
+                                            <Setter TargetName="icon" Property="Fill" Value="{StaticResource AccentColorDeepBrush}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsNew}" Value="True">
+                                            <Setter TargetName="icon" Property="Fill" Value="{StaticResource AccentBrush}"/>
+                                        </DataTrigger>
+                                    </HierarchicalDataTemplate.Triggers>
+                                </HierarchicalDataTemplate>
+                            </TreeView.ItemTemplate>
+                            <TreeView.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Open" Click="FileOpen_Click"/>
+                                    <MenuItem Header="Open containing folder" Click="FileReveal_Click"/>
+                                    <MenuItem Header="Copy path" Click="FileCopyPath_Click"/>
+                                </ContextMenu>
+                            </TreeView.ContextMenu>
+                        </TreeView>
+
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.6"
+                                    IsHitTestVisible="False">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Files.Roots.Count}" Value="0">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <TextBlock Text="NO FILES" FontFamily="{StaticResource MonoFont}" FontSize="12"
+                                       Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Set a working folder to browse it here"
+                                       Foreground="{StaticResource TextMutedBrush}" FontSize="12"
+                                       HorizontalAlignment="Center" Margin="0,6,0,0"/>
                         </StackPanel>
-                    </ScrollViewer>
+                    </Grid>
                 </DockPanel>
 
                 <StackPanel Style="{StaticResource ShowWhenNoProject}" HorizontalAlignment="Center"

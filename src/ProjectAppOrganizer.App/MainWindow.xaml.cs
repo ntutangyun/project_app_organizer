@@ -1,7 +1,9 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
+using ProjectAppOrganizer.App.Files;
 using ProjectAppOrganizer.App.Windows;
+using ProjectAppOrganizer.Core.Files;
 using ProjectAppOrganizer.Core.Models;
 using ProjectAppOrganizer.Core.Persistence;
 using ProjectAppOrganizer.Core.Terminals;
@@ -15,20 +17,28 @@ public partial class MainWindow : Window
     private readonly MainViewModel _vm;
     private readonly Win32WindowManager _wm;
     private ProjectViewModel? _shown;   // project whose window is currently on the stage
+    private readonly FileTreeWatcher _watcher;
 
     public MainWindow(Win32WindowManager wm, ITerminalLauncher launcher, IProjectStore store)
     {
         InitializeComponent();
         _wm = wm;
 
+        _watcher = new FileTreeWatcher(Dispatcher);
         _vm = new MainViewModel(
             store,
-            project => new ProjectViewModel(project, wm, launcher,
-                new StageManager(wm, () => _wm.SelfHandle), GetStageRect));
+            project =>
+            {
+                var pvm = new ProjectViewModel(project, wm, launcher,
+                    new StageManager(wm, () => _wm.SelfHandle), GetStageRect);
+                pvm.FilesStateChanged += () => _vm?.Save();
+                return pvm;
+            });
         _vm.Load();
         DataContext = _vm;
         _shown = _vm.SelectedProject;
         _vm.PropertyChanged += OnVmPropertyChanged;
+        WatchSelectedFolder();
 
         Loaded += OnLoaded;
         StateChanged += OnStateChanged;
@@ -82,6 +92,7 @@ public partial class MainWindow : Window
         _shown?.HideStage();
         _shown = _vm.SelectedProject;
         var next = _shown;
+        WatchSelectedFolder();
         // Defer so the (possibly just-shown) stage element has laid out before we measure it.
         Dispatcher.BeginInvoke(new Action(() => next?.ReactivateStage(GetStageRect())),
             System.Windows.Threading.DispatcherPriority.Background);
@@ -169,7 +180,141 @@ public partial class MainWindow : Window
         {
             FolderBox.Text = dlg.FolderName;   // writes back to Project.FolderPath via binding
             _vm.Save();
+            ReloadSelectedFolder();
         }
+    }
+
+    private void FolderBox_LostFocus(object sender, RoutedEventArgs e) => ReloadSelectedFolder();
+
+    private void FolderBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Enter) ReloadSelectedFolder();
+    }
+
+    /// <summary>Folder path edited by hand or via Browse: rebuild the tree and re-point the watcher.</summary>
+    private void ReloadSelectedFolder()
+    {
+        var project = _vm.SelectedProject;
+        if (project is null) return;
+        if (string.Equals(project.Files.RootPath, project.Project.FolderPath, StringComparison.OrdinalIgnoreCase))
+            return;
+        project.ReloadFiles();
+        WatchSelectedFolder();
+    }
+
+    /// <summary>Point the single file watcher at the selected project's working folder.</summary>
+    private void WatchSelectedFolder()
+    {
+        var project = _vm.SelectedProject;
+        if (project is null) { _watcher.Stop(); return; }
+        _watcher.Watch(project.Project.FolderPath, project.Files.Refresh, project.Files.ClearNewFlags);
+    }
+
+    private void NotesToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (IsLoaded) _vm.Save();
+    }
+
+    // ---------------- file tree ----------------
+
+    private FileNode? SelectedFile => FileTree.SelectedItem as FileNode;
+
+    private void FileTree_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        // Only react to a double-click on a row (not on the empty area), and only for files;
+        // folders toggle expansion natively.
+        if (FindAncestor<TreeViewItem>(e.OriginalSource as DependencyObject) is null) return;
+        if (SelectedFile is { IsDirectory: false } node)
+        {
+            OpenPath(node.FullPath);
+            e.Handled = true;
+        }
+    }
+
+    private void FileTree_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key != System.Windows.Input.Key.Enter || SelectedFile is not { } node) return;
+        if (node.IsDirectory) node.IsExpanded = !node.IsExpanded;
+        else OpenPath(node.FullPath);
+        e.Handled = true;
+    }
+
+    // Right-click selects the row under the cursor so the context menu acts on it.
+    private void FileTree_PreviewMouseRightButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (FindAncestor<TreeViewItem>(e.OriginalSource as DependencyObject) is { } item)
+        {
+            item.IsSelected = true;
+            item.Focus();
+        }
+    }
+
+    private void FileOpen_Click(object sender, RoutedEventArgs e)
+    {
+        if (SelectedFile is { } node) OpenPath(node.FullPath);
+    }
+
+    private void FileReveal_Click(object sender, RoutedEventArgs e)
+    {
+        if (SelectedFile is not { } node) return;
+        StartShell("explorer.exe", $"/select,\"{node.FullPath}\"", "Open containing folder");
+    }
+
+    private void FileCopyPath_Click(object sender, RoutedEventArgs e)
+    {
+        if (SelectedFile is not { } node) return;
+        try { Clipboard.SetText(node.FullPath); } catch (Exception) { /* clipboard busy */ }
+    }
+
+    /// <summary>Open a file or folder with whatever Windows has registered for it.</summary>
+    private void OpenPath(string path)
+    {
+        if (!System.IO.File.Exists(path) && !System.IO.Directory.Exists(path))
+        {
+            MessageBox.Show(this, "That file no longer exists.", "Open file",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            // No default app registered (or the user cancelled the picker): fall back to "Open with".
+            if (ex is System.ComponentModel.Win32Exception)
+            {
+                StartShell("rundll32.exe", $"shell32.dll,OpenAs_RunDLL {path}", "Open file");
+                return;
+            }
+            MessageBox.Show(this, $"Could not open file:\n{ex.Message}", "Open file",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void StartShell(string exe, string args, string title)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exe, args) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"Could not open:\n{ex.Message}", title,
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private static T? FindAncestor<T>(DependencyObject? node) where T : DependencyObject
+    {
+        while (node is not null)
+        {
+            if (node is T hit) return hit;
+            node = node is System.Windows.Media.Visual or System.Windows.Media.Media3D.Visual3D
+                ? System.Windows.Media.VisualTreeHelper.GetParent(node)
+                : LogicalTreeHelper.GetParent(node);
+        }
+        return null;
     }
 
     private void OpenFolder_Click(object sender, RoutedEventArgs e)
@@ -275,6 +420,7 @@ public partial class MainWindow : Window
             if (choice != 0 && choice != 1) { e.Cancel = true; return; }
             if (choice == 0) _vm.ReleaseAll(); else _vm.CloseAll();
         }
+        _watcher.Stop();
         _vm.Save();
     }
 

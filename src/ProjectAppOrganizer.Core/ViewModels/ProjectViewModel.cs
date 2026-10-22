@@ -3,6 +3,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
+using ProjectAppOrganizer.Core.Files;
 using ProjectAppOrganizer.Core.Models;
 using ProjectAppOrganizer.Core.Terminals;
 using ProjectAppOrganizer.Core.Windows;
@@ -33,6 +34,20 @@ public partial class ProjectViewModel : ObservableObject
 
         foreach (var todo in Project.Todos) Track(todo);
         Project.Todos.CollectionChanged += OnTodosCollectionChanged;
+
+        Files.ShowHidden = Project.ShowHiddenFiles;
+        Files.SetRoot(Project.FolderPath, Project.ExpandedFolders);
+        Files.ExpandedFoldersChanged += () =>
+        {
+            Project.ExpandedFolders = Files.ExpandedFolders.ToList();
+            FilesStateChanged?.Invoke();
+        };
+        Files.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName != nameof(FileTreeViewModel.ShowHidden)) return;
+            Project.ShowHiddenFiles = Files.ShowHidden;
+            FilesStateChanged?.Invoke();
+        };
     }
 
     public Project Project { get; }
@@ -41,6 +56,17 @@ public partial class ProjectViewModel : ObservableObject
     // Todos split for display: active (pending) above, completed below.
     public ObservableCollection<TodoItem> ActiveTodos { get; } = new();
     public ObservableCollection<TodoItem> CompletedTodos { get; } = new();
+
+    // ---------------- files ----------------
+
+    /// <summary>Tree of the working folder, kept in sync by the view's watcher.</summary>
+    public FileTreeViewModel Files { get; } = new();
+
+    /// <summary>Raised when persisted file-tree state (expansion, show-hidden) changes.</summary>
+    public event Action? FilesStateChanged;
+
+    /// <summary>Re-read the tree after <see cref="Project.FolderPath"/> changed.</summary>
+    public void ReloadFiles() => Files.SetRoot(Project.FolderPath, Project.ExpandedFolders);
 
     // ---------------- terminals / windows ----------------
 
