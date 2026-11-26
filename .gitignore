@@ -13,3 +13,4 @@ obj/
 
 # Local publish output (desktop shortcut target)
 dist/
+publish/
