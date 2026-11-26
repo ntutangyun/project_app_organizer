@@ -5,10 +5,10 @@
         WindowStartupLocation="CenterOwner"
         FontFamily="{StaticResource SansFont}" FontSize="13"
         TextOptions.TextFormattingMode="Ideal"
-        Background="{StaticResource BaseBrush}">
+        Background="{DynamicResource BaseBrush}">
     <Window.Resources>
         <Style x:Key="PickerItem" TargetType="ListBoxItem">
-            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Margin" Value="0,2"/>
             <Setter Property="Template">
@@ -17,10 +17,10 @@
                         <Border x:Name="bd" Background="Transparent" CornerRadius="8" Padding="12,9">
                             <DockPanel>
                                 <Ellipse Width="6" Height="6" DockPanel.Dock="Left" Margin="0,0,11,0"
-                                         VerticalAlignment="Center" Fill="{StaticResource CyanBrush}"/>
+                                         VerticalAlignment="Center" Fill="{DynamicResource CyanBrush}"/>
                                 <TextBlock Text="{Binding ProcessName}" DockPanel.Dock="Right"
                                            FontFamily="{StaticResource MonoFont}" FontSize="11"
-                                           Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"
                                            Margin="10,0,0,0"/>
                                 <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis"
                                            VerticalAlignment="Center"/>
@@ -28,11 +28,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="#141A26"/>
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource HoverBrush}"/>
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="{StaticResource ElevatedBrush}"/>
-                                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource ElevatedBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -45,7 +45,7 @@
         <StackPanel DockPanel.Dock="Top" Margin="2,0,0,12">
             <TextBlock Text="ATTACH WINDOW" Style="{StaticResource SectionLabel}" FontSize="12"/>
             <TextBlock Text="Pick an open window to dock into this project"
-                       Foreground="{StaticResource TextMutedBrush}" Margin="0,4,0,0"/>
+                       Foreground="{DynamicResource TextMutedBrush}" Margin="0,4,0,0"/>
         </StackPanel>
 
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
@@ -55,7 +55,7 @@
                     Height="34" Width="100" Margin="10,0,0,0"/>
         </StackPanel>
 
-        <Border Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource StrokeSubtleBrush}"
+        <Border Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource StrokeSubtleBrush}"
                 BorderThickness="1" CornerRadius="9" Padding="6">
             <ListBox x:Name="List" Background="Transparent" BorderThickness="0"
                      ItemContainerStyle="{StaticResource PickerItem}"

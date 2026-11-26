@@ -30,8 +30,7 @@ public partial class ChoiceDialog : Window
             ButtonHost.Children.Add(button);
         }
 
-        Loaded += (_, _) => ProjectAppOrganizer.App.Windows.Win32Interop.UseDarkTitleBar(
-            new System.Windows.Interop.WindowInteropHelper(this).Handle);
+        Loaded += (_, _) => ProjectAppOrganizer.App.Themes.ThemeManager.ApplyTitleBar(this);
     }
 
     /// <summary>Shows the dialog and returns the clicked button index (-1 if dismissed).</summary>

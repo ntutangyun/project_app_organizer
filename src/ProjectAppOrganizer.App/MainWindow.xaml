@@ -5,7 +5,7 @@
         WindowState="Maximized"
         FontFamily="{StaticResource SansFont}" FontSize="13"
         TextOptions.TextFormattingMode="Ideal"
-        Background="{StaticResource BaseBrush}">
+        Background="{DynamicResource BaseBrush}">
 
     <Window.Resources>
         <!-- Shared multi-line todo row (used by both the active and completed lists) -->
@@ -26,7 +26,7 @@
                     <Setter TargetName="todoDel" Property="Visibility" Value="Visible"/>
                 </Trigger>
                 <DataTrigger Binding="{Binding Done}" Value="True">
-                    <Setter TargetName="todoText" Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+                    <Setter TargetName="todoText" Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
                     <Setter TargetName="todoText" Property="TextDecorations" Value="Strikethrough"/>
                 </DataTrigger>
             </DataTemplate.Triggers>
@@ -72,19 +72,22 @@
         </Grid.ColumnDefinitions>
 
         <!-- ===================== Project rail ===================== -->
-        <Border Grid.Column="0" Background="{StaticResource RailBrush}"
-                BorderBrush="{StaticResource StrokeSubtleBrush}" BorderThickness="0,0,1,0">
+        <Border Grid.Column="0" Background="{DynamicResource RailBrush}"
+                BorderBrush="{DynamicResource StrokeSubtleBrush}" BorderThickness="0,0,1,0">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Top" Margin="18,20,18,14">
-                    <StackPanel Orientation="Horizontal">
-                        <Path Data="M 7,0 L 14,7 L 7,14 L 0,7 Z" Fill="{StaticResource AccentBrush}"
+                    <DockPanel>
+                        <Button x:Name="ThemeToggle" DockPanel.Dock="Right" Click="ThemeToggle_Click"
+                                Style="{StaticResource GhostButton}" Padding="0" Width="28" Height="26"
+                                FontSize="14" VerticalAlignment="Center"/>
+                        <Path Data="M 7,0 L 14,7 L 7,14 L 0,7 Z" Fill="{DynamicResource AccentBrush}"
                               Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center"
-                              Effect="{StaticResource AccentGlow}"/>
+                              Effect="{DynamicResource AccentGlow}"/>
                         <TextBlock Text="ORGANIZER" FontFamily="{StaticResource MonoFont}" FontWeight="Bold"
-                                   FontSize="14" Foreground="{StaticResource TextPrimaryBrush}"
+                                   FontSize="14" Foreground="{DynamicResource TextPrimaryBrush}"
                                    VerticalAlignment="Center" Margin="10,0,0,0"/>
-                    </StackPanel>
-                    <Border Height="1" Background="{StaticResource StrokeSubtleBrush}" Margin="0,14,0,0"/>
+                    </DockPanel>
+                    <Border Height="1" Background="{DynamicResource StrokeSubtleBrush}" Margin="0,14,0,0"/>
                 </StackPanel>
 
                 <TextBlock DockPanel.Dock="Top" Text="PROJECTS" Style="{StaticResource SectionLabel}"
@@ -103,7 +106,7 @@
                                         Tag="{Binding}" Style="{StaticResource TabCloseButton}"
                                         Visibility="Hidden" ToolTip="Delete project"/>
                                 <Border x:Name="pdot" Width="7" Height="7" CornerRadius="4"
-                                        Background="{StaticResource TextMutedBrush}" VerticalAlignment="Center"
+                                        Background="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"
                                         Margin="0,0,11,0"/>
                                 <TextBlock Text="{Binding Project.Name}" FontFamily="{StaticResource MonoFont}"
                                            VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
@@ -116,7 +119,7 @@
                                 <DataTrigger Value="True"
                                              Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}">
                                     <Setter TargetName="projDel" Property="Visibility" Value="Visible"/>
-                                    <Setter TargetName="pdot" Property="Background" Value="{StaticResource AccentBrush}"/>
+                                    <Setter TargetName="pdot" Property="Background" Value="{DynamicResource AccentBrush}"/>
                                 </DataTrigger>
                             </DataTemplate.Triggers>
                         </DataTemplate>
@@ -128,7 +131,7 @@
         <GridSplitter Grid.Column="1"/>
 
         <!-- ===================== Detail panel ===================== -->
-        <Border Grid.Column="2" Background="{StaticResource PanelBrush}" DataContext="{Binding SelectedProject}">
+        <Border Grid.Column="2" Background="{DynamicResource PanelBrush}" DataContext="{Binding SelectedProject}">
             <Grid>
                 <DockPanel Style="{StaticResource HideWhenNoProject}" Margin="0,8,0,0">
                     <StackPanel DockPanel.Dock="Top" Margin="18,12,18,0">
@@ -147,7 +150,7 @@
                                          Style="{StaticResource PathBox}" Height="34"
                                          LostFocus="FolderBox_LostFocus" KeyDown="FolderBox_KeyDown"/>
                                 <TextBlock Text="Not set — click Browse" IsHitTestVisible="False"
-                                           Foreground="{StaticResource TextMutedBrush}" Margin="12,0,0,0"
+                                           Foreground="{DynamicResource TextMutedBrush}" Margin="12,0,0,0"
                                            VerticalAlignment="Center">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
@@ -170,7 +173,7 @@
                         </Grid>
 
                         <!-- Collapsible notes & tasks -->
-                        <Border Height="1" Background="{StaticResource StrokeSubtleBrush}" Margin="0,16,0,0"/>
+                        <Border Height="1" Background="{DynamicResource StrokeSubtleBrush}" Margin="0,16,0,0"/>
                         <ToggleButton x:Name="NotesToggle" IsChecked="{Binding Project.NotesExpanded, Mode=TwoWay}"
                                       Checked="NotesToggle_Toggled" Unchecked="NotesToggle_Toggled"
                                       Cursor="Hand" Focusable="False" HorizontalContentAlignment="Stretch" Margin="0,6,0,0">
@@ -181,10 +184,10 @@
                                             <ToggleButton Style="{StaticResource Chevron}" DockPanel.Dock="Left"
                                                           IsChecked="{Binding IsChecked, RelativeSource={RelativeSource TemplatedParent}}"
                                                           IsHitTestVisible="False" Margin="0,0,6,0"/>
-                                            <Border DockPanel.Dock="Right" Background="{StaticResource AccentSoftBrush}"
+                                            <Border DockPanel.Dock="Right" Background="{DynamicResource AccentSoftBrush}"
                                                     CornerRadius="9" Padding="8,1" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding ActiveTodos.Count}" FontFamily="{StaticResource MonoFont}"
-                                                           FontSize="11" Foreground="{StaticResource AccentBrush}"/>
+                                                           FontSize="11" Foreground="{DynamicResource AccentBrush}"/>
                                             </Border>
                                             <TextBlock Text="NOTES &amp; TASKS" Style="{StaticResource SectionLabel}"
                                                        VerticalAlignment="Center"/>
@@ -217,7 +220,7 @@
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="COMPLETED" Style="{StaticResource SectionLabel}"/>
                                                 <TextBlock Text="{Binding CompletedTodos.Count}" FontFamily="{StaticResource MonoFont}"
-                                                           FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="8,0,0,0"/>
+                                                           FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="8,0,0,0"/>
                                             </StackPanel>
                                             <Button HorizontalAlignment="Right" Content="Clear completed"
                                                     Click="DeleteAllCompleted_Click" Style="{StaticResource GhostButton}"
@@ -231,7 +234,7 @@
                             <Button Content="+  Add task" Click="AddTodo_Click"
                                     Style="{StaticResource GhostButton}" HorizontalAlignment="Stretch" Margin="0,8,0,0"/>
                         </StackPanel>
-                        <Border Height="1" Background="{StaticResource StrokeSubtleBrush}" Margin="0,10,0,0"/>
+                        <Border Height="1" Background="{DynamicResource StrokeSubtleBrush}" Margin="0,10,0,0"/>
 
                         <!-- Files header -->
                         <Grid Margin="2,14,0,6">
@@ -254,7 +257,7 @@
                                 <HierarchicalDataTemplate ItemsSource="{Binding Children}">
                                     <StackPanel Orientation="Horizontal" ToolTip="{Binding FullPath}">
                                         <Path x:Name="icon" Width="13" Height="11" Stretch="Uniform" Margin="0,0,7,0"
-                                              VerticalAlignment="Center" Fill="{StaticResource TextMutedBrush}"
+                                              VerticalAlignment="Center" Fill="{DynamicResource TextMutedBrush}"
                                               Data="M 2,1 L 7,1 L 10,4 L 10,13 L 2,13 Z"/>
                                         <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
                                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=TreeViewItem}}"
@@ -264,10 +267,10 @@
                                         <DataTrigger Binding="{Binding IsDirectory}" Value="True">
                                             <Setter TargetName="icon" Property="Data"
                                                     Value="M 0,2 L 5,2 L 6.5,3.5 L 14,3.5 L 14,12 L 0,12 Z"/>
-                                            <Setter TargetName="icon" Property="Fill" Value="{StaticResource AccentColorDeepBrush}"/>
+                                            <Setter TargetName="icon" Property="Fill" Value="{DynamicResource AccentColorDeepBrush}"/>
                                         </DataTrigger>
                                         <DataTrigger Binding="{Binding IsNew}" Value="True">
-                                            <Setter TargetName="icon" Property="Fill" Value="{StaticResource AccentBrush}"/>
+                                            <Setter TargetName="icon" Property="Fill" Value="{DynamicResource AccentBrush}"/>
                                         </DataTrigger>
                                     </HierarchicalDataTemplate.Triggers>
                                 </HierarchicalDataTemplate>
@@ -294,9 +297,9 @@
                                 </Style>
                             </StackPanel.Style>
                             <TextBlock Text="NO FILES" FontFamily="{StaticResource MonoFont}" FontSize="12"
-                                       Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
+                                       Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
                             <TextBlock Text="Set a working folder to browse it here"
-                                       Foreground="{StaticResource TextMutedBrush}" FontSize="12"
+                                       Foreground="{DynamicResource TextMutedBrush}" FontSize="12"
                                        HorizontalAlignment="Center" Margin="0,6,0,0"/>
                         </StackPanel>
                     </Grid>
@@ -305,9 +308,9 @@
                 <StackPanel Style="{StaticResource ShowWhenNoProject}" HorizontalAlignment="Center"
                             VerticalAlignment="Center" Opacity="0.6">
                     <TextBlock Text="NO PROJECT" FontFamily="{StaticResource MonoFont}" FontSize="12"
-                               Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
+                               Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
                     <TextBlock Text="Select or create a project on the left"
-                               Foreground="{StaticResource TextMutedBrush}" Margin="0,6,0,0"/>
+                               Foreground="{DynamicResource TextMutedBrush}" Margin="0,6,0,0"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -317,8 +320,8 @@
         <!-- ===================== Main : tabs + stage ===================== -->
         <Grid Grid.Column="4" DataContext="{Binding SelectedProject}">
             <DockPanel Style="{StaticResource HideWhenNoProject}">
-                <Border DockPanel.Dock="Top" Background="{StaticResource PanelBrush}"
-                        BorderBrush="{StaticResource StrokeSubtleBrush}" BorderThickness="0,0,0,1">
+                <Border DockPanel.Dock="Top" Background="{DynamicResource PanelBrush}"
+                        BorderBrush="{DynamicResource StrokeSubtleBrush}" BorderThickness="0,0,0,1">
                     <DockPanel Margin="10,8,12,0">
                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center"
                                     Margin="10,0,0,8">
@@ -347,10 +350,10 @@
                                             <Ellipse Width="7" Height="7" Margin="11,0,8,0" VerticalAlignment="Center">
                                                 <Ellipse.Style>
                                                     <Style TargetType="Ellipse">
-                                                        <Setter Property="Fill" Value="{StaticResource CyanBrush}"/>
+                                                        <Setter Property="Fill" Value="{DynamicResource CyanBrush}"/>
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding IsTerminal}" Value="True">
-                                                                <Setter Property="Fill" Value="{StaticResource AccentBrush}"/>
+                                                                <Setter Property="Fill" Value="{DynamicResource AccentBrush}"/>
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
@@ -369,21 +372,21 @@
                 </Border>
 
                 <Border x:Name="Stage" Margin="14" CornerRadius="10"
-                        BorderBrush="{StaticResource StrokeSubtleBrush}" BorderThickness="1"
-                        Background="#0A0D14">
+                        BorderBrush="{DynamicResource StrokeSubtleBrush}" BorderThickness="1"
+                        Background="{DynamicResource StageBrush}">
                     <Grid>
-                        <Rectangle RadiusX="10" RadiusY="10" Fill="{StaticResource DotGridBrush}"/>
+                        <Rectangle RadiusX="10" RadiusY="10" Fill="{DynamicResource DotGridBrush}"/>
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.7">
                             <Border Width="62" Height="46" CornerRadius="6" HorizontalAlignment="Center"
-                                    BorderBrush="{StaticResource StrokeStrongBrush}" BorderThickness="1.5">
-                                <Border Height="11" VerticalAlignment="Top" Background="{StaticResource StrokeStrongBrush}"
+                                    BorderBrush="{DynamicResource StrokeStrongBrush}" BorderThickness="1.5">
+                                <Border Height="11" VerticalAlignment="Top" Background="{DynamicResource StrokeStrongBrush}"
                                         CornerRadius="5,5,0,0"/>
                             </Border>
                             <TextBlock Text="NO WINDOW STAGED" FontFamily="{StaticResource MonoFont}"
-                                       FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"
+                                       FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"
                                        HorizontalAlignment="Center" Margin="0,18,0,0"/>
                             <TextBlock Text="Open a terminal or attach a window to begin"
-                                       Foreground="{StaticResource TextMutedBrush}" FontSize="12"
+                                       Foreground="{DynamicResource TextMutedBrush}" FontSize="12"
                                        HorizontalAlignment="Center" Margin="0,6,0,0"/>
                         </StackPanel>
                     </Grid>
@@ -393,14 +396,14 @@
             <StackPanel Style="{StaticResource ShowWhenNoProject}" HorizontalAlignment="Center"
                         VerticalAlignment="Center" Opacity="0.5">
                 <Border Width="64" Height="48" CornerRadius="6" HorizontalAlignment="Center"
-                        BorderBrush="{StaticResource StrokeStrongBrush}" BorderThickness="1.5">
-                    <Border Height="11" VerticalAlignment="Top" Background="{StaticResource StrokeStrongBrush}"
+                        BorderBrush="{DynamicResource StrokeStrongBrush}" BorderThickness="1.5">
+                    <Border Height="11" VerticalAlignment="Top" Background="{DynamicResource StrokeStrongBrush}"
                             CornerRadius="5,5,0,0"/>
                 </Border>
                 <TextBlock Text="NO PROJECT SELECTED" FontFamily="{StaticResource MonoFont}" FontSize="12"
-                           Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,18,0,0"/>
+                           Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,18,0,0"/>
                 <TextBlock Text="Create or choose a project to dock windows into"
-                           Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                           Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center" Margin="0,6,0,0"/>
             </StackPanel>
         </Grid>
     </Grid>

@@ -28,6 +28,9 @@ public partial class App : Application
         // Re-attach any windows a previous crashed/killed session left owned.
         Services.GetRequiredService<Win32WindowManager>().RecoverOrphans();
 
+        // Apply the remembered colour theme before any window is built.
+        Themes.ThemeManager.Initialize();
+
         var window = Services.GetRequiredService<MainWindow>();
 
         // On any accidental termination, detach docked windows so they're never orphaned.

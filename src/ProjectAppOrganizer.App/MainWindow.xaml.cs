@@ -44,6 +44,19 @@ public partial class MainWindow : Window
         StateChanged += OnStateChanged;
         Closing += OnClosing;
         PreviewMouseWheel += Window_PreviewMouseWheel;
+
+        Themes.ThemeManager.Changed += UpdateThemeToggle;
+        UpdateThemeToggle();
+    }
+
+    private void ThemeToggle_Click(object sender, RoutedEventArgs e) => Themes.ThemeManager.Toggle();
+
+    /// <summary>The button shows the theme it switches to, like a light switch.</summary>
+    private void UpdateThemeToggle()
+    {
+        var dark = Themes.ThemeManager.Current == Themes.AppTheme.Dark;
+        ThemeToggle.Content = dark ? "☀" : "☾";
+        ThemeToggle.ToolTip = dark ? "Switch to the warm paper theme" : "Switch to the dark theme";
     }
 
     private const int WM_EXITSIZEMOVE = 0x0232;
@@ -52,7 +65,7 @@ public partial class MainWindow : Window
     {
         var handle = new System.Windows.Interop.WindowInteropHelper(this).Handle;
         _wm.SelfHandle = handle;
-        Win32Interop.UseDarkTitleBar(handle);
+        Themes.ThemeManager.ApplyTitleBar(this);
         // Re-align the staged window only when the user finishes moving/resizing the
         // organizer. Repositioning a foreign window during the live drag's modal loop
         // breaks the drag.

@@ -101,9 +101,9 @@ internal static class Win32Interop
 
     public const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
 
-    public static void UseDarkTitleBar(nint hwnd)
+    public static void UseDarkTitleBar(nint hwnd, bool dark = true)
     {
-        int on = 1;
+        int on = dark ? 1 : 0;
         DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref on, sizeof(int));
     }
 }

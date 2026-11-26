@@ -4,6 +4,8 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <!-- Palette must stay first: ThemeManager replaces index 0 to switch themes. -->
+                <ResourceDictionary Source="/Themes/Palette.Dark.xaml"/>
                 <ResourceDictionary Source="/Themes/Theme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
